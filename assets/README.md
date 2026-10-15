@@ -11,3 +11,7 @@
 所有图片均在当前文件夹中，Markdown 使用相对路径引用，无需联网加载。前两张图同时提供 SVG 原稿与由原稿渲染的 PNG，正文引用兼容性较好的 PNG。PNG 已逐张查看，中文文字与流程箭头显示正常。SVG 保留用于放大或编辑；图片内容不依赖 Mermaid 插件。
 
 知乎链接本次未能读取，因此未提取或使用该文章中的图片。
+
+## OntoPilot 本地运行截图
+
+`04-ontopilot-supplier.png` 为本轮 Chrome 截图，来自本地运行的开源 OntoPilot（MIT）供应商示例，包含合成业务数据和真实 DeepSeek 问答。未展示 API key；不是 Palantir 官方产品截图。

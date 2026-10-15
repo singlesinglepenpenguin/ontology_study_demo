@@ -14,6 +14,11 @@ sys.path.insert(0, str(UPSTREAM))
 
 
 def load_env():
+    # pip accepts a bare host:port proxy; httpx requires a URL scheme.
+    for key in ("all_proxy", "ALL_PROXY", "http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"):
+        value = os.environ.get(key, "")
+        if value and "://" not in value:
+            os.environ[key] = "http://" + value
     settings = HERE / "config/settings.yaml"
     if not settings.exists():
         settings.write_text((HERE / "config/settings.example.yaml").read_text())
