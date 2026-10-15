@@ -1,0 +1,22 @@
+Supplier:
+  - {supplierId: S1, name: 原供应商甲, delayDays: 7, status: active}
+  - {supplierId: S2, name: 备选供应商乙, delayDays: 0, status: active}
+  - {supplierId: S3, name: 备选供应商丙, delayDays: 0, status: active}
+Product:
+  - {productId: P1, name: 标准商品, specification: SPEC-A}
+  - {productId: P2, name: 不同规格商品, specification: SPEC-B}
+Customer:
+  - {customerId: C1, name: 客户甲}
+  - {customerId: C2, name: 客户乙}
+Order:
+  - {orderId: O1, customerId: C1, productId: P1, supplierId: S1, salesAmount: 60000, quantity: 60, bufferDays: 3}
+  - {orderId: O2, customerId: C2, productId: P1, supplierId: S1, salesAmount: 40000, quantity: 40, bufferDays: 5}
+  - {orderId: O3, customerId: C1, productId: P1, supplierId: S1, salesAmount: 20000, quantity: 20, bufferDays: 10}
+SupplyOption:
+  - {optionId: OPT-S2-P1, supplierId: S2, productId: P1, availableQuantity: 100, extraUnitCost: 20, onTime: true}
+  - {optionId: OPT-S3-P1, supplierId: S3, productId: P1, availableQuantity: 50, extraUnitCost: 10, onTime: true}
+  - {optionId: OPT-LATE, supplierId: S3, productId: P1, availableQuantity: 200, extraUnitCost: 10, onTime: false}
+  - {optionId: OPT-WRONG, supplierId: S2, productId: P2, availableQuantity: 200, extraUnitCost: 10, onTime: true}
+ChangeRequest: []
+Policy:
+  - {policyId: PROCUREMENT, extraBudget: 3000}

@@ -1,0 +1,163 @@
+"""供应商教学场景的确定性规则；模型不负责计算或审批校验。"""
+from __future__ import annotations
+
+import hashlib
+import json
+import sqlite3
+import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
+
+
+class SupplierService:
+    def __init__(self, store):
+        self.store = store
+
+    def require(self, kind, key):
+        obj = self.store.get(kind, key)
+        if obj is None:
+            raise KeyError(f"{kind}:{key} 不存在")
+        return obj
+
+    def assess_delay(self, params):
+        supplier = self.require("Supplier", params["supplierId"])
+        orders = self.store.query("Order", {"supplierId": supplier["supplierId"]}, None)
+        affected = [o for o in orders if supplier["delayDays"] > o["bufferDays"]]
+        return {
+            "supplierId": supplier["supplierId"], "delayDays": supplier["delayDays"],
+            "orderIds": [o["orderId"] for o in affected],
+            "affectedSalesAmount": float(sum(Decimal(str(o["salesAmount"])) for o in affected)),
+            "requiredQuantity": sum(o["quantity"] for o in affected),
+            "orders": affected, "currency": "CNY",
+            "note": "受影响销售额不是已发生损失；不计库存和排程调整。",
+        }
+
+    def assess_option(self, params):
+        impact = self.assess_delay(params)
+        option = self.require("SupplyOption", params["optionId"])
+        supplier = self.require("Supplier", option["supplierId"])
+        policy = self.require("Policy", "PROCUREMENT")
+        cost = Decimal(str(option["extraUnitCost"])) * impact["requiredQuantity"]
+        budget = Decimal(str(policy["extraBudget"]))
+        # A what-if budget can tighten the policy, never expand authorization.
+        if "budget" in params:
+            candidate = Decimal(str(params["budget"]))
+            if not candidate.is_finite() or candidate < 0:
+                raise KeyError("budget 必须为非负有限数值")
+            budget = min(budget, candidate)
+        reasons = []
+        if not impact["orders"]:
+            reasons.append("没有需要替换供应商的订单")
+        if any(o["productId"] != option["productId"] for o in impact["orders"]):
+            reasons.append("商品不匹配")
+        if option["supplierId"] == params["supplierId"] or supplier["status"] != "active":
+            reasons.append("备选供应商不可用")
+        if not option["onTime"]:
+            reasons.append("无法及时交付")
+        if option["availableQuantity"] < impact["requiredQuantity"]:
+            reasons.append("可用数量不足")
+        if cost > budget:
+            reasons.append("超出额外采购预算")
+        result = {
+            **impact, "optionId": option["optionId"],
+            "replacementSupplierId": option["supplierId"],
+            "extraCost": float(cost), "extraUnitCost": option["extraUnitCost"],
+            "budget": float(budget), "availableQuantity": option["availableQuantity"],
+            "feasible": not reasons, "reasons": reasons,
+        }
+        snapshot = {"orders": impact["orders"], "option": option, "supplier": supplier,
+                    "originalSupplier": self.require("Supplier", params["supplierId"]),
+                    "policy": policy}
+        result["snapshot"] = hashlib.sha256(
+            json.dumps(snapshot, sort_keys=True, ensure_ascii=False).encode()
+        ).hexdigest()
+        return result
+
+    def request_details(self, params):
+        return self.require("ChangeRequest", params["requestId"])
+
+    def trace_order(self, params):
+        order = self.require("Order", params["orderId"])
+        return {
+            "order": order,
+            "customer": self.store.traverse("Order", order["orderId"], "customer", None),
+            "product": self.store.traverse("Order", order["orderId"], "product", None),
+            "supplier": self.store.traverse("Order", order["orderId"], "supplier", None),
+            "path": ["Order.customer", "Order.product", "Order.supplier"],
+        }
+
+    def validate_action(self, role, name, params):
+        allowed = {
+            "submitSupplierChange": {"buyer", "admin"},
+            "approveSupplierChange": {"approver", "admin"},
+            "executeSupplierChange": {"buyer", "admin"},
+        }
+        if role not in allowed.get(name, set()):
+            raise PermissionError(f"角色 {role} 无权执行 {name}")
+        if name == "submitSupplierChange":
+            assessment = self.assess_option(params)
+        else:
+            request = self.require("ChangeRequest", params["requestId"])
+            required_status = "pending" if name == "approveSupplierChange" else "approved"
+            if request["status"] != required_status:
+                raise KeyError(f"申请状态必须为 {required_status}，当前为 {request['status']}")
+            assessment = self.assess_option(request)
+            if assessment["snapshot"] != request["snapshot"]:
+                raise KeyError("订单、供货方案或预算已变化，请重新提交并审批")
+        if not assessment["feasible"]:
+            raise KeyError("；".join(assessment["reasons"]))
+        return assessment
+
+    def execute(self, role, user_id, name, params, confirmed):
+        if not confirmed:
+            raise PermissionError("修改前需要用户确认")
+        # Original ObjectStore commits every write separately. Use one SQLite
+        # transaction so a multi-order change cannot be partially committed.
+        if self.store._in_memory is not None:
+            return self._execute(role, user_id, name, params)
+        with sqlite3.connect(self.store._db_path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            fork = self.store.fork()
+            result = SupplierService(fork)._execute(role, user_id, name, params)
+            for kind, rows in fork._in_memory.items():
+                for key, obj in rows.items():
+                    if self.store.get(kind, key) != obj:
+                        conn.execute("INSERT OR REPLACE INTO objects VALUES (?,?,?)",
+                                     (kind, key, json.dumps(obj, ensure_ascii=False)))
+            return result
+
+    def _execute(self, role, user_id, name, params):
+        assessment = self.validate_action(role, name, params)
+        now = datetime.now(timezone.utc).isoformat()
+        if name == "submitSupplierChange":
+            request = {
+                "requestId": f"CR-{uuid.uuid4().hex[:8]}", "status": "pending",
+                "supplierId": params["supplierId"], "optionId": params["optionId"],
+                "orderIds": assessment["orderIds"], "extraCost": assessment["extraCost"],
+                "snapshot": assessment["snapshot"], "createdBy": user_id, "createdAt": now,
+            }
+            result = self.store.create("ChangeRequest", request)
+        elif name == "approveSupplierChange":
+            request = self.require("ChangeRequest", params["requestId"])
+            if request["createdBy"] == user_id:
+                raise PermissionError("提交人与审批人必须不同")
+            result = self.store.update("ChangeRequest", request["requestId"],
+                                       {"status": "approved", "approvedBy": user_id, "approvedAt": now})
+        else:
+            request = self.require("ChangeRequest", params["requestId"])
+            for order in assessment["orders"]:
+                self.store.update("Order", order["orderId"], {
+                    "supplierId": assessment["replacementSupplierId"],
+                    "lastChangeRequestId": request["requestId"],
+                })
+            option = self.require("SupplyOption", request["optionId"])
+            self.store.update("SupplyOption", option["optionId"], {
+                "availableQuantity": option["availableQuantity"] - assessment["requiredQuantity"],
+            })
+            policy = self.require("Policy", "PROCUREMENT")
+            remaining = Decimal(str(policy["extraBudget"])) - Decimal(str(assessment["extraCost"]))
+            self.store.update("Policy", "PROCUREMENT", {"extraBudget": float(remaining)})
+            result = self.store.update("ChangeRequest", request["requestId"], {
+                "status": "executed", "executedBy": user_id, "executedAt": now,
+            })
+        return {"status": "executed", "action": name, "result": result}

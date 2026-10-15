@@ -8,6 +8,7 @@
 - [资料来源](资料来源.md)：官方来源、客户公告与仓库版本记录。
 - [配图说明](assets/README.md)：原创示意图与引用图片的来源。
 - [本地演示说明](demo/README.md)：无需账号或密钥，体验查询、测算、审批和留痕。
+- [OntoPilot 供应商示例](demo/ontopilot_supplier/README.md)：将第 6 节的本体定义、关系与业务函数对应到开源框架；规则测试及前端构建通过，Python 后端与真实模型问答待验证。
 - `repos/`：已克隆 Palantir 社区注册库和 Neo4j GraphRAG 示例，保留原许可证。
 
 ```bash

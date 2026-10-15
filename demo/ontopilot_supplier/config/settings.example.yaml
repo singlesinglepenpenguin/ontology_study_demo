@@ -1,0 +1,10 @@
+active_model_id: deepseek-flash-demo
+models:
+  - id: deepseek-flash-demo
+    name: DeepSeek Flash
+    provider: openai_compatible
+    model: deepseek-v4-flash
+    base_url: https://api.deepseek.com
+    api_key_env: DEEPSEEK_API_KEY
+    max_tokens: 4096
+    temperature: 0

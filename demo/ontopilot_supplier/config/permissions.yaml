@@ -1,0 +1,20 @@
+# 此处是教学角色授权，不是生产身份认证。
+roles:
+  viewer:
+    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
+    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    actions: {}
+    data_scope: {}
+  buyer:
+    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
+    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    actions:
+      submitSupplierChange: {requires_confirmation: true}
+      executeSupplierChange: {requires_confirmation: true}
+    data_scope: {}
+  approver:
+    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
+    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    actions:
+      approveSupplierChange: {requires_confirmation: true}
+    data_scope: {}

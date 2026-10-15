@@ -121,6 +121,8 @@ AI 也可以参与信息整理，例如从邮件中提取问题分类、结合�
 
 ## 6. 如何从零构建：沿用供应商延期案例
 
+为让下面的建模步骤可以对应到代码，本文增加了 [OntoPilot 供应商教学示例](demo/ontopilot_supplier/README.md)。它使用开源 OntoPilot 的 YAML 本体、SQLite 对象存储和 LangGraph Agent，分别定义对象、关系、计算与操作。它是对同一供应商场景的开源演示，不是 Palantir 产品或官方案例代码。目前业务规则测试与前端构建通过，Python 运行时接入及 DeepSeek 实际问答仍待验证。
+
 ### 官方有没有方法，有没有标准方案？
 
 **有官方设计方法和实施教程，可以作为可复用的起点；具体业务模型仍需企业自己确定。** 官方《Ontology design: Best practices》强调按现实业务建模、跨团队协作、避免重复，并用真实业务问题验证设计；另有结构指南及对象、关系、操作的创建教程。[设计最佳实践](https://www.palantir.com/docs/foundry/ontology/ontology-best-practices)、[结构指南](https://www.palantir.com/docs/foundry/ontology/ontology-structural-guidance)
@@ -193,7 +195,32 @@ flowchart LR
 
 本文教学验收应至少覆盖：S1 延期 7 天时能找到 O1、O2；金额汇总为 100,000 元、替代增量成本为 2,000 元；预算 1,000 元时不能执行；未审批或无权限时不能变更；供货选项数量不足时不能沿用旧结论。还需核对数据更新后查询是否变化，以及变更记录能否对应到实际订单。
 
-完成这一轮设计，应留下业务问题清单、对象与关系定义、数据映射表、函数与操作说明、权限审批规则及验收记录。本文给出了设计示例；现有 `demo/` 仍是上一节的规则模拟，并未实现本节新增的完整对象模型，也未在 Palantir 环境部署验证。
+完成这一轮设计，应留下业务问题清单、对象与关系定义、数据映射表、函数与操作说明、权限审批规则及验收记录。原有 `demo/demo.py` 是上一节的规则模拟；新增的 OntoPilot 示例对应本节模型，其验证范围另行列明，二者都未在 Palantir 环境部署验证。
+
+### 将构建步骤对应到开源 Demo
+
+新增的 `demo/ontopilot_supplier/` 将上述设计拆成可阅读的文件：
+
+| 构建内容 | 对应文件与实现 |
+|---|---|
+| 定义类型、属性和关系 | `config/ontology_schema.yaml`：Supplier、Product、Customer、Order、SupplyOption、ChangeRequest，另加 Policy 保存教学预算 |
+| 填充对象与建立关联 | `config/seed_data.yaml`：O1 的 customerId 为 C1；Order.customer 用这个外键关联客户对象 |
+| 查询与测算 | `domain.py`：按延期天数与缓冲判断影响，计算成本并检查商品、数量、交付和预算；`traceOrderRelations` 实际沿订单关系查询 |
+| 操作与权限 | `config/permissions.yaml` 与 `domain.py`：采购员提交、审批员审批、采购员执行，后端重新检查业务条件 |
+| 连接 Agent | `runtime.py` 注册业务函数与操作，`run.py` 复用上游 Agent，将查询和计算结果交给 DeepSeek |
+| 验收 | 规则单测、SQLite 集成测试、`smoke_live.py` 的真实模型问答与工具轨迹检查 |
+
+在这套实现中，**YAML 负责声明有哪些能力，Python 负责实现能力如何运行**。例如，定义 `assessSupplyOption` 并不会自动获得成本计算程序，需要注册对应函数。关系也需明确字段映射，例如：
+
+```yaml
+# Order 类型下的关系定义
+links:
+  customer: {target: Customer, foreign_key: customerId}
+```
+
+为检验规则是否真正区分风险，Demo 增加了销售订单 O3：缓冲 10 天，不受 S1 的 7 天延期影响。O1、O2 仍应合计为 100,000 元和 100 件，替代成本仍为 2,000 元。这里的数值是教学数据与规则的预期结果，不是已经取得的模型回答。
+
+可用“沿 O1 的关系找出客户、商品与供应商”“S1 延期影响哪些订单”“OPT-S2-P1 能否覆盖需求，预算降到 1,000 元会怎样”等问题验收。安装、命令、角色及各项验证状态见 [Demo 说明](demo/ontopilot_supplier/README.md)。当前已通过 9 项独立业务规则测试；SQLite Runtime 接入和真实 Agent 问答尚受 Python 依赖安装权限阻碍，未宣称已跑通。
 
 ## 7. 公开企业案例
 
@@ -210,6 +237,10 @@ Airbus 于 2017 年宣布与 Palantir 合作推出 Skywise。2019 年关于 Unit
 该资料由厂商发布，可用于了解工作机制；其中的效率说法不宜直接推广为其他企业的预期收益。
 
 ## 8. 可实践的开源项目
+
+### OntoPilot：与本文供应商案例直接对应
+
+[OntoPilot](https://github.com/jingw2/ontopilot) 提供 YAML 本体、业务函数、权限、操作、审计与 Agent 的开源框架。本文新增的 [供应商 Demo](demo/ontopilot_supplier/README.md) 优先用它连接第 6 节的设计；它采用 SQLite，不需要另外准备 Neo4j。上游已克隆、前端已构建；本例规则测试通过，Python 后端与模型问答仍待完成验证。
 
 ### Neo4j Customer Graph：本体与 Agent 的开源参考
 
@@ -228,6 +259,7 @@ Neo4j 的 [graphrag-examples](https://github.com/neo4j-product-examples/graphrag
 | 路线 | 当前文件 | 适合学习 | 本次验证状态 |
 |---|---|---|---|
 | 本地规则示例 | `demo/` | 对象、计算、审批和留痕 | 已运行验证，无 LLM |
+| OntoPilot 供应商示例 | `demo/ontopilot_supplier/`、`repos/ontopilot/` | 本体定义、关系、计算和 Agent | 规则测试及前端构建通过，后端与真实问答待验证 |
 | Neo4j Agent | `repos/graphrag-examples/` | 本体与图检索、Agent 工具 | 已克隆和检查，未端到端运行 |
 | Palantir 社区案例 | `repos/aip-community-registry/` | 原生平台的对象与 SDK | 已克隆，未在平台部署 |
 
