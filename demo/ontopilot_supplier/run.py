@@ -69,12 +69,12 @@ def main():
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             runtime = build_runtime(Path(tmp) / "check.db")
-            impact = runtime.call_function("viewer-demo", "viewer", "assessSupplierDelay", {"supplierId": "S1"})
-            option = runtime.call_function("viewer-demo", "viewer", "assessSupplyOption", {"supplierId": "S1", "optionId": "OPT-S2-P1"})
+            impact = runtime.call_function("viewer-demo", "viewer", "assessSupplierDelay", {"supplierId": "SUP-001", "materialId": "MAT-001"})
+            option = runtime.call_function("viewer-demo", "viewer", "assessSupplyOption", {"supplierId": "SUP-001", "optionId": "OPT-MAT-001-FAST"})
             customer = runtime.traverse("viewer-demo", "viewer", "Order", "O1", "customer")
             assert impact["orderIds"] == ["O1", "O2"]
-            assert impact["affectedSalesAmount"] == 100000
-            assert option["extraCost"] == 2000 and option["feasible"]
+            assert impact["affectedSalesAmount"] == 70000
+            assert option["extraCost"] == 20000 and option["feasible"]
             assert customer[0]["customerId"] == "C1"
             print(json.dumps({"impact": impact, "option": option, "customer": customer}, ensure_ascii=False, indent=2))
     else:

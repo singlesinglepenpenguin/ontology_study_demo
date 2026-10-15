@@ -5,6 +5,7 @@ import hashlib
 import json
 import sqlite3
 import uuid
+from contextlib import closing
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -22,19 +23,29 @@ class SupplierService:
     def assess_delay(self, params):
         supplier = self.require("Supplier", params["supplierId"])
         orders = self.store.query("Order", {"supplierId": supplier["supplierId"]}, None)
+        orders = [o for o in orders if o.get("status", "open") == "open"
+                  and (not params.get("materialId") or o["materialId"] == params["materialId"])]
         affected = [o for o in orders if supplier["delayDays"] > o["bufferDays"]]
+        by_material = {}
+        for order in affected:
+            group = by_material.setdefault(order["materialId"], {"materialId": order["materialId"], "quantity": 0, "salesAmount": 0})
+            group["quantity"] += order["quantity"]
+            group["salesAmount"] += order["salesAmount"]
         return {
             "supplierId": supplier["supplierId"], "delayDays": supplier["delayDays"],
             "orderIds": [o["orderId"] for o in affected],
             "affectedSalesAmount": float(sum(Decimal(str(o["salesAmount"])) for o in affected)),
             "requiredQuantity": sum(o["quantity"] for o in affected),
             "orders": affected, "currency": "CNY",
+            "byMaterial": list(by_material.values()),
             "note": "受影响销售额不是已发生损失；不计库存和排程调整。",
         }
 
     def assess_option(self, params):
-        impact = self.assess_delay(params)
         option = self.require("SupplyOption", params["optionId"])
+        if params.get("materialId") and params["materialId"] != option["materialId"]:
+            raise KeyError("指定物料与供货选项不匹配")
+        impact = self.assess_delay({**params, "materialId": option["materialId"]})
         supplier = self.require("Supplier", option["supplierId"])
         policy = self.require("Policy", "PROCUREMENT")
         cost = Decimal(str(option["extraUnitCost"])) * impact["requiredQuantity"]
@@ -46,10 +57,10 @@ class SupplierService:
                 raise KeyError("budget 必须为非负有限数值")
             budget = min(budget, candidate)
         reasons = []
+        if option.get("sourceSupplierId", params["supplierId"]) != params["supplierId"]:
+            reasons.append("增量报价对应的原供应商不匹配")
         if not impact["orders"]:
             reasons.append("没有需要替换供应商的订单")
-        if any(o["productId"] != option["productId"] for o in impact["orders"]):
-            reasons.append("商品不匹配")
         if option["supplierId"] == params["supplierId"] or supplier["status"] != "active":
             reasons.append("备选供应商不可用")
         if not option["onTime"]:
@@ -61,6 +72,7 @@ class SupplierService:
         result = {
             **impact, "optionId": option["optionId"],
             "replacementSupplierId": option["supplierId"],
+            "materialId": option["materialId"],
             "extraCost": float(cost), "extraUnitCost": option["extraUnitCost"],
             "budget": float(budget), "availableQuantity": option["availableQuantity"],
             "feasible": not reasons, "reasons": reasons,
@@ -78,13 +90,45 @@ class SupplierService:
 
     def trace_order(self, params):
         order = self.require("Order", params["orderId"])
+        purchase_orders = self.store.traverse("Order", order["orderId"], "originalPurchaseOrder", None)
+        batches = [b for po in purchase_orders for b in self.store.traverse("PurchaseOrder", po["orderId"], "generatedFrom", None)]
+        plans = [p for b in batches for p in self.store.traverse("AllocationBatch", b["batchId"], "belongsToPlan", None)]
         return {
             "order": order,
             "customer": self.store.traverse("Order", order["orderId"], "customer", None),
-            "product": self.store.traverse("Order", order["orderId"], "product", None),
+            "material": self.store.traverse("Order", order["orderId"], "material", None),
             "supplier": self.store.traverse("Order", order["orderId"], "supplier", None),
-            "path": ["Order.customer", "Order.product", "Order.supplier"],
+            "originalPurchaseOrder": purchase_orders,
+            "allocationBatches": batches, "allocationPlans": plans,
+            "supplierScores": self.store.query("SupplierScore", {"supplierId": order["supplierId"]}, None),
+            "path": ["Order.customer", "Order.material", "Order.supplier", "Order.originalPurchaseOrder"],
         }
+
+    def compare_options(self, params):
+        self.require("Material", params["materialId"])
+        candidates = self.store.query("SupplyOption", {"materialId": params["materialId"], "sourceSupplierId": params["supplierId"]}, None)
+        results = [self.assess_option({**params, "optionId": o["optionId"]}) for o in candidates]
+        for result in results:
+            result.pop("orders", None)
+            result.pop("snapshot", None)
+        return {"supplierId": params["supplierId"], "materialId": params["materialId"],
+                "options": sorted(results, key=lambda r: (not r["feasible"], r["extraCost"])),
+                "method": "同物料、覆盖全部受影响需求；先检查约束，再按增量成本排序；不是AI预测或全局最优排产。"}
+
+    def overview(self, params):
+        kinds = ["Supplier", "Material", "Customer", "Order", "SupplyOption",
+                 "AllocationPlan", "AllocationBatch", "PurchaseOrder", "SupplierScore"]
+        counts = {kind: self.store.count(kind, {}) for kind in kinds}
+        impacts = [self.assess_delay({"supplierId": s["supplierId"]})
+                   for s in self.store.query("Supplier", {}, None) if s.get("delayDays", 0) > 0]
+        return {"counts": counts, "affectedSalesAmount": sum(i["affectedSalesAmount"] for i in impacts),
+                "affectedOrderCount": sum(len(i["orderIds"]) for i in impacts),
+                "delayedSuppliers": [{k: v for k, v in i.items() if k != "orders"} for i in impacts],
+                "inventory": [{"materialId": m["materialId"], "name": m["name"],
+                               "currentStock": m["currentStock"], "reservedStock": m["reservedStock"],
+                               "availableStock": m["currentStock"] - m["reservedStock"]}
+                              for m in self.store.query("Material", {}, None)],
+                "snapshotDate": "2026-07-01", "note": "所有数据均为教学数据；采购历史和销售需求分别计数，不相加为同一种订单。"}
 
     def validate_action(self, role, name, params):
         allowed = {
@@ -115,7 +159,7 @@ class SupplierService:
         # transaction so a multi-order change cannot be partially committed.
         if self.store._in_memory is not None:
             return self._execute(role, user_id, name, params)
-        with sqlite3.connect(self.store._db_path) as conn:
+        with closing(sqlite3.connect(self.store._db_path)) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             fork = self.store.fork()
             result = SupplierService(fork)._execute(role, user_id, name, params)
@@ -133,6 +177,7 @@ class SupplierService:
             request = {
                 "requestId": f"CR-{uuid.uuid4().hex[:8]}", "status": "pending",
                 "supplierId": params["supplierId"], "optionId": params["optionId"],
+                "materialId": assessment["materialId"],
                 "orderIds": assessment["orderIds"], "extraCost": assessment["extraCost"],
                 "snapshot": assessment["snapshot"], "createdBy": user_id, "createdAt": now,
             }
@@ -149,6 +194,7 @@ class SupplierService:
                 self.store.update("Order", order["orderId"], {
                     "supplierId": assessment["replacementSupplierId"],
                     "lastChangeRequestId": request["requestId"],
+                    "supplyOptionId": request["optionId"],
                 })
             option = self.require("SupplyOption", request["optionId"])
             self.store.update("SupplyOption", option["optionId"], {

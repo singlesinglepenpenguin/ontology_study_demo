@@ -16,6 +16,7 @@ from ontopilot.store import ObjectStore
 from domain import SupplierService
 
 HERE = Path(__file__).resolve().parent
+DEFAULT_DB = HERE / ".procurement-v2.db"
 
 
 class SupplierActions(ActionExecutor):
@@ -54,11 +55,18 @@ class SupplierContext(ContextBuilder):
             }
         return text + "\n[业务定义]\n" + json.dumps(definitions, ensure_ascii=False) + (
             "\n[教学范围]所有数据为虚构。金额单位为人民币元，数量为件。"
-            "订单为销售订单，一单一商品、单一供应商，省略采购单及排程。"
+            "Order是客户销售订单，PurchaseOrder是采购单，不混合金额口径。"
+            "本例按原物料规格直接转售，一单一物料，不模拟生产BOM。"
+            "原始采购数据与新增销售需求共享Supplier和Material编号。"
             "请先 object_query 查询 Supplier、Order，再 call_function 计算。"
-            "客户与订单按 customerId 关联，供货选项按 productId 关联。"
+            "客户与订单按 customerId 关联，供货选项按 materialId 和 sourceSupplierId 关联。"
             "assessSupplierDelay 计算影响，assessSupplyOption 评估供货选项。"
-            "traceOrderRelations 实际沿订单关系查询客户、商品和供应商。"
+            "traceOrderRelations 实际沿订单关系查客户、物料、供应商、历史采购单和评分。"
+            "全局概览调用getProcurementOverview；候选方案比较调用compareSupplyOptions。"
+            "analyzeSupplyRisk是上游规则评分，不是AI预测。"
+            "该风险函数未定义100分满分，不要补写/100或把分数换成概率。"
+            "assessSupplyOption只替换选项对应物料的受影响订单，不能跨物料相加选型。"
+            "库存须减去reservedStock；本例风险物料可用库存为0，不做库存分摊或排产。"
             "回答须列出具体对象编号和工具返回的计算依据。"
             "评估和推荐不会自动创建申请；提交、审批、执行是不同操作。"
             "缺少信息时查询，不编造。不要调用物流仿真工具，本场景无 Shipment。"
@@ -68,7 +76,7 @@ class SupplierContext(ContextBuilder):
 def build_runtime(db_path=None, reset=False):
     config = HERE / "config"
     schema = SchemaRegistry(str(config / "ontology_schema.yaml"))
-    store = ObjectStore(str(db_path or HERE / ".ontopilot.db"), schema)
+    store = ObjectStore(str(db_path or DEFAULT_DB), schema)
     if reset:
         store.clear_all()
     if not store.count("Supplier", {}):
@@ -81,6 +89,8 @@ def build_runtime(db_path=None, reset=False):
         "assessSupplyOption": service.assess_option,
         "getChangeRequest": service.request_details,
         "traceOrderRelations": service.trace_order,
+        "getProcurementOverview": service.overview,
+        "compareSupplyOptions": service.compare_options,
     })
     for name in schema.function_names:
         definition = schema.get_function(name)
@@ -89,7 +99,7 @@ def build_runtime(db_path=None, reset=False):
             "required": {k: v.get("description", k) for k, v in definition.params.items() if v.get("required")},
             "optional": {k: v.get("description", k) for k, v in definition.params.items() if not v.get("required")},
         }
-    audit = AuditLogger(str(db_path or HERE / ".ontopilot.db"))
+    audit = AuditLogger(str(db_path or DEFAULT_DB))
     runtime = OntologyRuntime(
         schema, store, governance,
         SupplierContext(str(config / "context_sources.yaml"), store, governance, schema),

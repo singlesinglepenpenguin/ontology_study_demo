@@ -1,5 +1,6 @@
 """Apply small, reversible UI adaptations; default builds retain upstream accounts."""
 from pathlib import Path
+import shutil
 
 from run import UPSTREAM
 
@@ -31,7 +32,7 @@ def main():
     replace_once(
         root / "src/components/ChatPanel.tsx",
         'placeholder="输入业务问题，例如：查询华南仓所有延迟的货物..."',
-        'placeholder={__SUPPLIER_DEMO__ ? "输入业务问题，例如：S1延期影响哪些订单？" : "输入业务问题，例如：查询华南仓所有延迟的货物..."}',
+        'placeholder={__SUPPLIER_DEMO__ ? "输入业务问题，例如：华兴科技的电芯延期影响哪些订单？" : "输入业务问题，例如：查询华南仓所有延迟的货物..."}',
     )
     replace_once(
         root / "src/App.tsx",
@@ -39,6 +40,17 @@ def main():
         "user.role === 'viewer' ? '只读' : user.role === 'buyer' ? '采购' : user.role === 'approver' ? '审批' : user.role === 'admin' ? '管理员' : user.role === 'regional_manager' ? '区域经理' : '调度员'",
     )
     (root / "src/supplier-demo.d.ts").write_text("declare const __SUPPLIER_DEMO__: boolean;\n")
+    shutil.copy2(Path(__file__).parent / "model/SupplierDemoHome.tsx", root / "src/components/SupplierDemoHome.tsx")
+    replace_once(root / "src/components/WelcomePage.tsx", "import React from 'react'",
+                 "import React from 'react'\nimport { SupplierDemoHome } from './SupplierDemoHome'")
+    replace_once(root / "src/components/WelcomePage.tsx", "  onStart: () => void",
+                 "  onStart: () => void\n  onDemoQuestion?: (question: string) => void")
+    replace_once(root / "src/components/WelcomePage.tsx",
+                 "export function WelcomePage({ onStart, onViewChange }: Props) {",
+                 "export function WelcomePage({ onStart, onViewChange, onDemoQuestion }: Props) {\n"
+                 "  if (__SUPPLIER_DEMO__) return <SupplierDemoHome onStart={onStart} onQuestion={onDemoQuestion || onStart} />")
+    replace_once(root / "src/App.tsx", "            onStart={startChat}",
+                 "            onStart={startChat}\n            onDemoQuestion={question => { startChat(); void sendMessage(question, false) }}")
     print("供应商界面适配完成；设置 ONTOPILOT_SUPPLIER_DEMO=1 构建才会启用。")
 
 

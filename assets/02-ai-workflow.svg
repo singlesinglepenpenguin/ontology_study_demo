@@ -18,7 +18,7 @@
 <rect x="442" y="360" width="316" height="140" rx="14" fill="white" stroke="#d8e2ef"/><rect x="442" y="375" width="4" height="26" rx="2" fill="#157b70"/>
 <text x="462" y="394" font-size="21" font-weight="600" fill="#157b70">05  执行操作</text>
 <text x="462" y="429" font-size="17" font-weight="400" fill="#506580">调用 Action 更新订单</text>
-<text x="462" y="456" font-size="17" font-weight="400" fill="#506580">连接已配置的业务系统</text>
+<text x="462" y="456" font-size="17" font-weight="400" fill="#506580">本例更新本地供货安排</text>
 <rect x="48" y="360" width="316" height="140" rx="14" fill="white" stroke="#d8e2ef"/><rect x="48" y="375" width="4" height="26" rx="2" fill="#157b70"/>
 <text x="68" y="394" font-size="21" font-weight="600" fill="#157b70">06  记录与反馈</text>
 <text x="68" y="429" font-size="17" font-weight="400" fill="#506580">保存执行结果和业务变化</text>
@@ -31,5 +31,5 @@
 <path d="M48,430 L24,430 L24,210 L48,210" stroke="#a8b7ca" stroke-width="2" fill="none" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
 <rect x="48" y="535" width="1104" height="55" rx="12" fill="#e8f2ef"/>
 <text x="75" y="570" font-size="21" font-weight="500" fill="#17695f">本体提供业务含义和可调用能力；权限与规则贯穿整个流程。</text>
-<text x="48" y="615" font-size="15" font-weight="400" fill="#6b7d93">本文原创流程示意；具体审批与自动化方式取决于企业配置。</text>
+<text x="48" y="615" font-size="15" font-weight="400" fill="#6b7d93">本文原创流程示意；基于实际项目；审批执行经程序测试，真实问答验证查询与评估。</text>
 </g></svg>

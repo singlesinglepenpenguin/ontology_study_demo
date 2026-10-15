@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from run import HERE, UPSTREAM, get_llm
-from runtime import build_runtime
+from runtime import build_runtime, DEFAULT_DB
 
 
 def create_app():
@@ -19,6 +19,9 @@ def create_app():
     from api.routes.sessions import router as sessions_router
     from api.routes.audit import router as audit_router
     from api.routes.settings import router as settings_router
+    from api.routes import chat, sessions
+    sessions.session_store = sessions.SessionStore(str(DEFAULT_DB))
+    chat.session_store = sessions.session_store
     import yaml
 
     def attach(app, reset=False):
@@ -97,12 +100,18 @@ def create_app():
     @app.post("/api/ontology/import")
     async def reset(request: Request):
         attach(request.app, reset=True)
-        return {"status": "ok", "message": "教学数据已重置", "object_type_count": 7,
-                "action_count": 3, "function_count": 4}
+        return {"status": "ok", "message": "教学数据已重置",
+                "object_type_count": len(request.app.state.schema.object_type_names),
+                "action_count": len(request.app.state.schema.action_names),
+                "function_count": len(request.app.state.schema.function_names)}
 
     @app.get("/api/health")
     async def health():
         return {"status": "ok", "ontology": "supplier-delay"}
+
+    @app.get("/api/demo/overview")
+    async def overview(request: Request):
+        return request.app.state.runtime.call_function("demo-home", "viewer", "getProcurementOverview", {})
 
     dist = UPSTREAM / "frontend" / "dist"
     if dist.exists():

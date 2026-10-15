@@ -1,0 +1,313 @@
+object_types:
+  Supplier:
+    description: 供应商；延期天数是本次供货的简化状态，不是长期固定能力
+    properties:
+      supplierId:
+        type: string
+        primary_key: true
+        required: true
+        description: 供应商编号
+      name:
+        type: string
+        required: true
+        description: 供应商名称
+      delayDays:
+        type: integer
+        required: true
+        description: 本次供货延期天数
+      status:
+        type: string
+        required: true
+        description: active 或 inactive
+  Customer:
+    description: 销售订单所属客户
+    properties:
+      customerId:
+        type: string
+        primary_key: true
+        required: true
+        description: 客户编号
+      name:
+        type: string
+        required: true
+        description: 客户名称
+      region:
+        type: string
+        description: 客户所在区域
+  Order:
+    description: 客户销售订单；单商品且全量由一家供应商供货，一件销售需求对应一件采购需求
+    properties:
+      orderId:
+        type: string
+        primary_key: true
+        required: true
+        description: 销售订单编号
+      customerId:
+        type: string
+        required: true
+        description: 客户编号
+      materialId:
+        type: string
+        required: true
+        description: 商品编号
+      supplierId:
+        type: string
+        required: true
+        description: 当前供应商编号
+      salesAmount:
+        type: number
+        required: true
+        description: 销售金额，人民币元，不等于实际损失
+      quantity:
+        type: integer
+        required: true
+        description: 需求数量，件
+      bufferDays:
+        type: integer
+        required: true
+        description: 交付缓冲天数
+      lastChangeRequestId:
+        type: string
+        description: 最近执行的变更申请编号
+      originalPurchaseOrderId:
+        type: string
+        description: 最初关联的采购单编号；变更供货安排不改写历史采购单
+      status:
+        type: string
+        description: open 待交付、completed 已完成
+      supplyOptionId:
+        type: string
+        description: 获批执行后采用的供货选项
+    links:
+      customer:
+        target: Customer
+        foreign_key: customerId
+      material:
+        target: Material
+        foreign_key: materialId
+      supplier:
+        target: Supplier
+        foreign_key: supplierId
+      lastChange:
+        target: ChangeRequest
+        foreign_key: lastChangeRequestId
+      originalPurchaseOrder:
+        target: PurchaseOrder
+        foreign_key: originalPurchaseOrderId
+      supplyOption:
+        target: SupplyOption
+        foreign_key: supplyOptionId
+  SupplyOption:
+    description: 某供应商针对某商品的候选供货方案；非供应商固定属性
+    properties:
+      optionId:
+        type: string
+        primary_key: true
+        required: true
+        description: 供货选项编号
+      supplierId:
+        type: string
+        required: true
+        description: 提供方编号
+      materialId:
+        type: string
+        required: true
+        description: 商品编号
+      availableQuantity:
+        type: integer
+        required: true
+        description: 可用数量，件
+      extraUnitCost:
+        type: number
+        required: true
+        description: 比原方案每件多付的人民币元
+      onTime:
+        type: boolean
+        required: true
+        description: 能否满足交付时点
+      sourceSupplierId:
+        type: string
+        description: 所替代的原供应商；增量成本仅相对此原供货价格
+    links:
+      supplier:
+        target: Supplier
+        foreign_key: supplierId
+      material:
+        target: Material
+        foreign_key: materialId
+      originalSupplier:
+        target: Supplier
+        foreign_key: sourceSupplierId
+  ChangeRequest:
+    description: 供应商变更申请；pending 待审批、approved 已批准、executed 已执行
+    properties:
+      requestId:
+        type: string
+        primary_key: true
+        required: true
+        description: 申请编号
+      status:
+        type: string
+        required: true
+        description: 申请状态
+      supplierId:
+        type: string
+        required: true
+        description: 原供应商编号
+      optionId:
+        type: string
+        required: true
+        description: 拟采用的供货选项编号
+      orderIds:
+        type: list<string>
+        description: 受影响销售订单编号列表，用 Order 查询核对
+      extraCost:
+        type: number
+        description: 申请时测算的额外成本
+      snapshot:
+        type: string
+        description: 审批所依据的业务数据指纹
+      createdBy:
+        type: string
+        description: 提交人
+      createdAt:
+        type: string
+        description: 提交时间
+      approvedBy:
+        type: string
+        description: 审批人
+      approvedAt:
+        type: string
+        description: 审批时间
+      executedBy:
+        type: string
+        description: 执行人
+      executedAt:
+        type: string
+        description: 执行时间
+      materialId:
+        type: string
+        description: 本次变更的物料编号
+    links:
+      originalSupplier:
+        target: Supplier
+        foreign_key: supplierId
+      option:
+        target: SupplyOption
+        foreign_key: optionId
+      orders:
+        target: Order
+        foreign_key: orderIds
+      material:
+        target: Material
+        foreign_key: materialId
+  Policy:
+    description: 教学采购预算；执行时扣减，不能通过 Agent 参数扩大
+    properties:
+      policyId:
+        type: string
+        primary_key: true
+        required: true
+        description: 策略编号
+      extraBudget:
+        type: number
+        required: true
+        description: 剩余额外采购预算，人民币元
+functions:
+  traceOrderRelations:
+    description: 实际沿订单的 customer、material、supplier 关系查询客户、商品与供应商并返回路径
+    params:
+      orderId:
+        type: string
+        required: true
+        description: 销售订单编号，如 O1
+    returns: object
+  assessSupplierDelay:
+    description: 查询供应商关联订单，按延期大于缓冲判断受影响订单并汇总销售金额和件数
+    params:
+      supplierId:
+        type: string
+        required: true
+        description: 供应商编号，如 SUP-001
+      materialId:
+        type: string
+        required: false
+        description: 可选物料编号；省略则逐物料汇总
+    returns: object
+  assessSupplyOption:
+    description: 评估替代供货方案，检查商品、供货状态、时点、数量与预算，确定性计算额外成本
+    params:
+      supplierId:
+        type: string
+        required: true
+        description: 原供应商编号，如 SUP-001
+      optionId:
+        type: string
+        required: true
+        description: 供货选项编号，如 OPT-MAT-001-FAST
+      budget:
+        type: number
+        required: false
+        description: 可选的更紧预算假设，仅用于测算，不能扩大实际预算
+    returns: object
+  getChangeRequest:
+    description: 查询申请状态、订单、提交人及审批执行记录
+    params:
+      requestId:
+        type: string
+        required: true
+        description: 已存在的 CR 申请编号
+    returns: object
+  getProcurementOverview:
+    description: 统计整个教学采购台账、销售订单、库存预留和延期影响；金额由程序计算
+    params: {}
+    returns: object
+  compareSupplyOptions:
+    description: 比较同一原供应商同物料的候选方案，逐项计算交期、数量、状态和预算约束并排序；不是AI预测
+    params:
+      supplierId:
+        type: string
+        required: true
+        description: 原供应商编号
+      materialId:
+        type: string
+        required: true
+        description: 受影响物料编号
+      budget:
+        type: number
+        required: false
+        description: 更紧预算假设，不会提高真实预算
+    returns: object
+actions:
+  submitSupplierChange:
+    description: 提交原供应商 的替代供货方案，产生 pending 申请；需先评估并经用户确认
+    target_type: ChangeRequest
+    creates: true
+    requires_confirmation: true
+    params:
+      supplierId:
+        type: string
+        required: true
+        description: 原供应商编号
+      optionId:
+        type: string
+        required: true
+        description: 供货选项编号
+  approveSupplierChange:
+    description: 审批 pending 申请；仅审批员可操作，且不能审批自己提交的申请
+    target_type: ChangeRequest
+    requires_confirmation: true
+    params:
+      requestId:
+        type: string
+        required: true
+        description: 待审批申请编号
+  executeSupplierChange:
+    description: 执行已批准申请；重新校验数据指纹、预算和数量，更新订单并扣减可用数量与预算
+    target_type: ChangeRequest
+    requires_confirmation: true
+    params:
+      requestId:
+        type: string
+        required: true
+        description: 已批准申请编号

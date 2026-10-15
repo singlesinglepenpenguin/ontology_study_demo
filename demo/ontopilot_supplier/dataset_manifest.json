@@ -1,0 +1,39 @@
+{
+  "version": "procurement-merged-v2",
+  "snapshotDate": "2026-07-01",
+  "upstreamCommit": "dc9ac375b979c7ea4fa95d209194f55b10f909f9",
+  "counts": {
+    "Material": 6,
+    "Supplier": 8,
+    "AllocationPlan": 10,
+    "AllocationBatch": 21,
+    "PurchaseOrder": 18,
+    "SupplierScore": 10,
+    "Customer": 12,
+    "Order": 48,
+    "SupplyOption": 36,
+    "ChangeRequest": 0,
+    "Policy": 1
+  },
+  "upstreamCounts": {
+    "Material": 6,
+    "Supplier": 5,
+    "AllocationPlan": 3,
+    "AllocationBatch": 8,
+    "PurchaseOrder": 5,
+    "SupplierScore": 7
+  },
+  "legacyMapping": {
+    "S1": "SUP-001",
+    "S2": "SUP-006",
+    "S3": "SUP-004",
+    "P1": "MAT-001",
+    "P2": "MAT-002"
+  },
+  "mockFieldsOnUpstream": [
+    "Supplier.delayDays",
+    "Material.reservedStock"
+  ],
+  "note": "原项目也为教学数据；增量价格相对sourceSupplierId报价；库存预留为新增假设；未接真实企业数据。",
+  "seedSha256": "18cedf898984e87b47857c872e188e9c10a7b7d0f32c4b3af86054a5dde90da5"
+}

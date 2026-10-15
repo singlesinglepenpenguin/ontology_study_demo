@@ -15,11 +15,11 @@ class MemoryStore:
                 "S2": {"supplierId": "S2", "delayDays": 0, "status": "active"},
             },
             "Order": {
-                "O1": {"orderId": "O1", "supplierId": "S1", "productId": "P1", "quantity": 60, "salesAmount": 60000, "bufferDays": 3},
-                "O2": {"orderId": "O2", "supplierId": "S1", "productId": "P1", "quantity": 40, "salesAmount": 40000, "bufferDays": 5},
-                "O3": {"orderId": "O3", "supplierId": "S1", "productId": "P1", "quantity": 20, "salesAmount": 20000, "bufferDays": 10},
+                "O1": {"orderId": "O1", "supplierId": "S1", "materialId": "P1", "quantity": 60, "salesAmount": 60000, "bufferDays": 3},
+                "O2": {"orderId": "O2", "supplierId": "S1", "materialId": "P1", "quantity": 40, "salesAmount": 40000, "bufferDays": 5},
+                "O3": {"orderId": "O3", "supplierId": "S1", "materialId": "P1", "quantity": 20, "salesAmount": 20000, "bufferDays": 10},
             },
-            "SupplyOption": {"OPT": {"optionId": "OPT", "supplierId": "S2", "productId": "P1", "availableQuantity": 100, "extraUnitCost": 20, "onTime": True}},
+            "SupplyOption": {"OPT": {"optionId": "OPT", "supplierId": "S2", "materialId": "P1", "availableQuantity": 100, "extraUnitCost": 20, "onTime": True}},
             "Policy": {"PROCUREMENT": {"policyId": "PROCUREMENT", "extraBudget": 3000}},
             "ChangeRequest": {},
         }
@@ -71,7 +71,7 @@ class SupplierRulesTest(unittest.TestCase):
             self.submit()
 
     def test_stock_product_time_and_supplier_guards(self):
-        for change in [{"availableQuantity": 99}, {"productId": "P2"}, {"onTime": False}]:
+        for change in [{"availableQuantity": 99}, {"materialId": "P2"}, {"onTime": False}]:
             with self.subTest(change=change):
                 original = self.store.get("SupplyOption", "OPT")
                 self.store.update("SupplyOption", "OPT", change)

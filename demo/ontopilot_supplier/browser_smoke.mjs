@@ -16,16 +16,17 @@ try {
   await page.getByRole('button', { name: /查询员/ }).click()
   await page.locator('input[type=password]').fill('demo123')
   await page.getByRole('button', { name: '进入系统' }).click()
-  await page.getByRole('button', { name: /开始对话/ }).first().click()
-  await page.locator('textarea').waitFor()
-  await page.getByRole('button', { name: '本体可视化', exact: true }).click()
-  await page.getByText('Supplier', { exact: true }).first().waitFor()
+  await page.getByText('48', { exact: true }).waitFor()
+  await page.screenshot({ path: output + 'supplier-home.png', fullPage: true })
   const chatResponse = page.waitForResponse(
     r => r.url().endsWith('/api/chat') && r.request().method() === 'POST',
     { timeout: 180000 },
   )
-  await page.locator('textarea').fill('查询S1关联的订单，再调用assessSupplierDelay计算受影响订单、销售金额和需求数量。只查询，不执行操作。')
-  await page.getByRole('button', { name: '发送', exact: true }).click()
+  chatResponse.catch(() => {})
+  await page.getByRole('button', { name: /02\s*延期影响/ }).click()
+  await page.locator('textarea').waitFor()
+  await page.getByRole('button', { name: '本体可视化', exact: true }).click()
+  await page.getByText('Supplier', { exact: true }).first().waitFor()
   const response = await chatResponse
   const result = await response.json()
   if (response.status() !== 200 || !result.response?.includes('O1') || !result.response?.includes('O2')) {

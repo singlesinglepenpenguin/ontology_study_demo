@@ -1,20 +1,76 @@
-# 此处是教学角色授权，不是生产身份认证。
 roles:
   viewer:
-    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
-    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    query_types:
+    - Material
+    - Supplier
+    - AllocationPlan
+    - AllocationBatch
+    - PurchaseOrder
+    - SupplierScore
+    - Customer
+    - Order
+    - SupplyOption
+    - ChangeRequest
+    - Policy
+    functions:
+    - traceOrderRelations
+    - assessSupplierDelay
+    - assessSupplyOption
+    - getChangeRequest
+    - getProcurementOverview
+    - compareSupplyOptions
+    - analyzeSupplyRisk
     actions: {}
     data_scope: {}
   buyer:
-    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
-    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    query_types:
+    - Material
+    - Supplier
+    - AllocationPlan
+    - AllocationBatch
+    - PurchaseOrder
+    - SupplierScore
+    - Customer
+    - Order
+    - SupplyOption
+    - ChangeRequest
+    - Policy
+    functions:
+    - traceOrderRelations
+    - assessSupplierDelay
+    - assessSupplyOption
+    - getChangeRequest
+    - getProcurementOverview
+    - compareSupplyOptions
+    - analyzeSupplyRisk
     actions:
-      submitSupplierChange: {requires_confirmation: true}
-      executeSupplierChange: {requires_confirmation: true}
+      submitSupplierChange:
+        requires_confirmation: true
+      executeSupplierChange:
+        requires_confirmation: true
     data_scope: {}
   approver:
-    query_types: [Supplier, Product, Customer, Order, SupplyOption, ChangeRequest, Policy]
-    functions: [assessSupplierDelay, assessSupplyOption, getChangeRequest, traceOrderRelations]
+    query_types:
+    - Material
+    - Supplier
+    - AllocationPlan
+    - AllocationBatch
+    - PurchaseOrder
+    - SupplierScore
+    - Customer
+    - Order
+    - SupplyOption
+    - ChangeRequest
+    - Policy
+    functions:
+    - traceOrderRelations
+    - assessSupplierDelay
+    - assessSupplyOption
+    - getChangeRequest
+    - getProcurementOverview
+    - compareSupplyOptions
+    - analyzeSupplyRisk
     actions:
-      approveSupplierChange: {requires_confirmation: true}
+      approveSupplierChange:
+        requires_confirmation: true
     data_scope: {}
