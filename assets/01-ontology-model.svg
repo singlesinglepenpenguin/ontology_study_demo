@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img"><title>从分散的数据，到可执行的业务模型</title><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#687b92" stroke-width="1.5"/></marker></defs><rect width="1200" height="650" fill="#f5f8fc"/><g font-family="PingFang SC,Microsoft YaHei,Noto Sans CJK SC,sans-serif"><text x="48" y="58" font-size="30" font-weight="700" fill="#142b49">从分散的数据，到可执行的业务模型</text><text x="48" y="94" font-size="17" fill="#5e7188">概念示意：以供应商延期与订单处理为例</text>
+<rect x="48" y="125" width="350" height="100" rx="14" fill="white" stroke="#d8e2ef"/><rect x="48" y="140" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="68" y="159" font-size="21" font-weight="600" fill="#2761bb">采购系统</text>
+<text x="68" y="194" font-size="17" font-weight="400" fill="#506580">供应商编号、交期</text>
+<path d="M223,225 L223,265" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="425" y="125" width="350" height="100" rx="14" fill="white" stroke="#d8e2ef"/><rect x="425" y="140" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="445" y="159" font-size="21" font-weight="600" fill="#2761bb">订单系统</text>
+<text x="445" y="194" font-size="17" font-weight="400" fill="#506580">客户、订单、交付日期</text>
+<path d="M600,225 L600,265" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="802" y="125" width="350" height="100" rx="14" fill="white" stroke="#d8e2ef"/><rect x="802" y="140" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="822" y="159" font-size="21" font-weight="600" fill="#2761bb">仓储系统</text>
+<text x="822" y="194" font-size="17" font-weight="400" fill="#506580">商品、库存、可用数量</text>
+<path d="M977,225 L977,265" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="48" y="270" width="1104" height="190" rx="16" fill="#eaf1fc" stroke="#b7ccec"/>
+<text x="70" y="305" font-size="22" font-weight="600" fill="#24549c">共同的业务含义：对象、属性与关系</text>
+<rect x="75" y="327" width="230" height="107" rx="14" fill="white" stroke="#d8e2ef"/><rect x="75" y="342" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="95" y="361" font-size="21" font-weight="600" fill="#2761bb">供应商 S1</text>
+<text x="95" y="396" font-size="17" font-weight="400" fill="#506580">交期延迟 7 天</text>
+<rect x="350" y="327" width="230" height="107" rx="14" fill="white" stroke="#d8e2ef"/><rect x="350" y="342" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="370" y="361" font-size="21" font-weight="600" fill="#2761bb">商品 P1</text>
+<text x="370" y="396" font-size="17" font-weight="400" fill="#506580">供应商提供的商品</text>
+<rect x="625" y="327" width="230" height="107" rx="14" fill="white" stroke="#d8e2ef"/><rect x="625" y="342" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="645" y="361" font-size="21" font-weight="600" fill="#2761bb">订单 O1</text>
+<text x="645" y="396" font-size="17" font-weight="400" fill="#506580">商品数量、金额、交期</text>
+<rect x="900" y="327" width="230" height="107" rx="14" fill="white" stroke="#d8e2ef"/><rect x="900" y="342" width="4" height="26" rx="2" fill="#2761bb"/>
+<text x="920" y="361" font-size="21" font-weight="600" fill="#2761bb">客户 C1</text>
+<text x="920" y="396" font-size="17" font-weight="400" fill="#506580">关联订单与交付要求</text>
+<path d="M305,380 L350,380" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M580,380 L625,380" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M855,380 L900,380" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M600,460 L600,500" stroke="#687b92" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="48" y="505" width="350" height="105" rx="14" fill="white" stroke="#d8e2ef"/><rect x="48" y="520" width="4" height="26" rx="2" fill="#157b70"/>
+<text x="68" y="539" font-size="21" font-weight="600" fill="#157b70">逻辑：评估影响</text>
+<text x="68" y="574" font-size="17" font-weight="400" fill="#506580">计算金额、检查库存与预算</text>
+<rect x="425" y="505" width="350" height="105" rx="14" fill="white" stroke="#d8e2ef"/><rect x="425" y="520" width="4" height="26" rx="2" fill="#157b70"/>
+<text x="445" y="539" font-size="21" font-weight="600" fill="#157b70">操作：执行变更</text>
+<text x="445" y="574" font-size="17" font-weight="400" fill="#506580">获批后更换订单供应商</text>
+<rect x="802" y="505" width="350" height="105" rx="14" fill="white" stroke="#d8e2ef"/><rect x="802" y="520" width="4" height="26" rx="2" fill="#157b70"/>
+<text x="822" y="539" font-size="21" font-weight="600" fill="#157b70">安全：限定操作范围</text>
+<text x="822" y="574" font-size="17" font-weight="400" fill="#506580">权限、审批与过程记录</text>
+<text x="48" y="634" font-size="15" font-weight="400" fill="#6b7d93">基于 Palantir 官方概念整理；对象和数据为本文教学示例。</text>
+</g></svg>
