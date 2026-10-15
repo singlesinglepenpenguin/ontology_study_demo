@@ -7,6 +7,9 @@ const questions = [
   ['没有可行方案', '海威电子SUP-004的光学镜头MAT-004延期，有没有能全量准时供货的备选？列出各候选失败原因。'],
   ['预算不足', '比较华兴科技SUP-001的主控芯片MAT-005备选方案，为什么完整替代超出预算？'],
   ['追溯业务关系', '沿O1查客户、物料、供应商、最初采购单、分货批次和计划，给出编号及供应商评分。'],
+  ['销售聚合图表', '把全部销售订单按物料汇总，展示金额排名图表、单数、件数和总计。'],
+  ['延期影响汇总', '只统计受延期影响的销售订单，按供应商汇总，展示金额图表和总计。'],
+  ['采购台账汇总', '将采购单按供应商汇总，展示金额前5名、单数和全量总计。不要混入销售订单。'],
   ['解释风险评分', 'PLAN-DEMO-RISK为什么是高风险？计算分数并解释规则，这是不是AI预测？'],
 ]
 
@@ -36,7 +39,7 @@ export function SupplierDemoHome({ onStart, onQuestion }: { onStart: () => void;
       <div className="grid md:grid-cols-2 gap-3">
         {questions.map(([label, question], i) => <button key={label} onClick={() => onQuestion(question)}
           className="rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-blue-400 hover:bg-blue-50 transition-colors">
-          <div className="text-sm font-semibold"><span className="text-blue-600 mr-2">0{i+1}</span>{label}</div>
+          <div className="text-sm font-semibold"><span className="text-blue-600 mr-2">{String(i+1).padStart(2, '0')}</span>{label}</div>
           <p className="text-sm text-slate-500 mt-2 leading-relaxed">{question}</p>
         </button>)}
       </div>

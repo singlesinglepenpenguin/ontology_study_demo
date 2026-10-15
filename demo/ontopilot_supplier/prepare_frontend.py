@@ -51,6 +51,30 @@ def main():
                  "  if (__SUPPLIER_DEMO__) return <SupplierDemoHome onStart={onStart} onQuestion={onDemoQuestion || onStart} />")
     replace_once(root / "src/App.tsx", "            onStart={startChat}",
                  "            onStart={startChat}\n            onDemoQuestion={question => { startChat(); void sendMessage(question, false) }}")
+    for filename in ("supplierStream.ts", "SupplierActivity.tsx"):
+        destination = root / ("src/supplierStream.ts" if filename.endswith(".ts") else "src/components/SupplierActivity.tsx")
+        shutil.copy2(Path(__file__).parent / "model" / filename, destination)
+    replace_once(root / "src/App.tsx", "import { useSSE } from './hooks/useSSE'",
+                 "import { supplierStream } from './supplierStream'\nimport { useSSE } from './hooks/useSSE'")
+    replace_once(root / "src/App.tsx", "useSSE(sessionId, handleTraceEvent)",
+                 "useSSE(__SUPPLIER_DEMO__ ? null : sessionId, handleTraceEvent)")
+    app_path = root / "src/App.tsx"
+    app_text = app_path.read_text()
+    app_path.write_text(app_text.replace("prev.map((msg, i) => i === prev.length - 1 ? fn(msg) : msg)",
+                                          "prev.map(msg => msg.role === 'assistant' && msg.timestamp === assistant.timestamp ? fn(msg) : msg)"))
+    branch = (Path(__file__).parent / "model/stream_branch.txt").read_text()
+    replace_once(root / "src/App.tsx", "      const res = await fetch('/api/chat', {", branch + "      const res = await fetch('/api/chat', {")
+    replace_once(root / "src/types.ts", "  awaiting_confirmation?: boolean",
+                 "  steps?: string[]\n  charts?: import('./components/SupplierActivity').AggregateView[]\n  streaming?: boolean\n  awaiting_confirmation?: boolean")
+    replace_once(root / "src/components/ChatPanel.tsx", "import { Markdown } from './Markdown'",
+                 "import { Markdown } from './Markdown'\nimport { SupplierActivity } from './SupplierActivity'")
+    replace_once(root / "src/components/ChatPanel.tsx", '<div className="text-sm text-gray-800 leading-relaxed">',
+                 '<SupplierActivity steps={msg.steps} charts={msg.charts} streaming={msg.streaming} />\n                    <div className="text-sm text-gray-800 leading-relaxed">')
+    replace_once(root / "src/components/ChatPanel.tsx", "{loading && (", "{loading && !messages.some(m => m.streaming) && (")
+    replace_once(root / "src/App.tsx", "(m: { role: string; content: string; timestamp: string })", "(m: { role: string; content: string; timestamp: string; steps?: string[]; charts?: Message['charts'] })")
+    replace_once(root / "src/App.tsx", "        timestamp: m.timestamp,", "        timestamp: m.timestamp,\n        steps: m.steps, charts: m.charts,")
+    replace_once(root / "src/components/Markdown.tsx", '<div key={key} className="overflow-x-auto my-2">',
+                 '<div key={`${key}-table`} className="overflow-x-auto my-2">')
     print("供应商界面适配完成；设置 ONTOPILOT_SUPPLIER_DEMO=1 构建才会启用。")
 
 

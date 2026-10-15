@@ -62,6 +62,7 @@ class SupplierContext(ContextBuilder):
             "客户与订单按 customerId 关联，供货选项按 materialId 和 sourceSupplierId 关联。"
             "assessSupplierDelay 计算影响，assessSupplyOption 评估供货选项。"
             "traceOrderRelations 实际沿订单关系查客户、物料、供应商、历史采购单和评分。"
+            "分组汇总、排名、图表调用aggregateOrders，严禁用object_query的aggregation参数做sum/group_by。"
             "全局概览调用getProcurementOverview；候选方案比较调用compareSupplyOptions。"
             "analyzeSupplyRisk是上游规则评分，不是AI预测。"
             "该风险函数未定义100分满分，不要补写/100或把分数换成概率。"
@@ -91,6 +92,7 @@ def build_runtime(db_path=None, reset=False):
         "traceOrderRelations": service.trace_order,
         "getProcurementOverview": service.overview,
         "compareSupplyOptions": service.compare_options,
+        "aggregateOrders": service.aggregate_orders,
     })
     for name in schema.function_names:
         definition = schema.get_function(name)

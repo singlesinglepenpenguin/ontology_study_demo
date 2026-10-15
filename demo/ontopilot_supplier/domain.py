@@ -130,6 +130,53 @@ class SupplierService:
                               for m in self.store.query("Material", {}, None)],
                 "snapshotDate": "2026-07-01", "note": "所有数据均为教学数据；采购历史和销售需求分别计数，不相加为同一种订单。"}
 
+    def aggregate_orders(self, params):
+        """Whitelisted grouping; sales and purchasing are always separate scopes."""
+        kind = params.get("objectType", "Order")
+        group = params.get("groupBy", "supplierId")
+        valid_groups = {"supplierId": ("Supplier", "name"), "materialId": ("Material", "name"),
+                        "status": None}
+        if kind == "Order":
+            valid_groups["customerId"] = ("Customer", "name")
+        if kind not in ("Order", "PurchaseOrder") or group not in valid_groups:
+            raise KeyError("仅支持 Order/PurchaseOrder 按 supplierId、materialId、status 分组；销售订单还支持 customerId")
+        filters = params.get("filters") or {}
+        if not isinstance(filters, dict) or set(filters) - set(valid_groups):
+            raise KeyError("filters 仅支持供应商、物料、状态和销售客户编号的等值筛选")
+        if any(not isinstance(value, str) for value in filters.values()):
+            raise KeyError("筛选值必须为字符串")
+        affected_only = params.get("affectedOnly", False)
+        if not isinstance(affected_only, bool) or (affected_only and kind != "Order"):
+            raise KeyError("affectedOnly 仅支持销售订单，值必须为布尔值")
+        limit = params.get("topN", 20)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise KeyError("topN 必须是1到100的整数")
+        orders = self.store.query(kind, filters, None)
+        if affected_only:
+            orders = [o for o in orders if o["status"] == "open" and
+                      self.require("Supplier", o["supplierId"])["delayDays"] > o["bufferDays"]]
+        amount_key = "salesAmount" if kind == "Order" else "totalAmount"
+        buckets = {}
+        for order in orders:
+            key = order[group]
+            row = buckets.setdefault(key, {"key": key, "count": 0, "quantity": 0, "amount": Decimal(0)})
+            row["count"] += 1
+            row["quantity"] += order["quantity"]
+            row["amount"] += Decimal(str(order[amount_key]))
+        rows = []
+        for key, row in buckets.items():
+            target = valid_groups[group]
+            row["label"] = f"{self.require(target[0], key)[target[1]]} ({key})" if target else key
+            row["amount"] = float(row["amount"])
+            rows.append(row)
+        rows.sort(key=lambda row: (-row["amount"], row["key"]))
+        return {"objectType": kind, "groupBy": group, "filters": filters, "affectedOnly": affected_only,
+                "amountField": amount_key, "currency": "CNY", "rows": rows[:limit],
+                "totalGroups": len(rows), "shownGroups": min(limit, len(rows)),
+                "totals": {"count": len(orders), "quantity": sum(o["quantity"] for o in orders),
+                           "amount": float(sum((Decimal(str(o[amount_key])) for o in orders), Decimal(0)))},
+                "note": "按金额降序；合计覆盖全部筛选记录，Top N仅截取展示行。销售额/采购额分别计算；受影响销售额不是已发生损失。"}
+
     def validate_action(self, role, name, params):
         allowed = {
             "submitSupplierChange": {"buyer", "admin"},

@@ -278,6 +278,25 @@ functions:
         required: false
         description: 更紧预算假设，不会提高真实预算
     returns: object
+  aggregateOrders:
+    description: 按供应商、物料、状态、销售客户汇总销售订单或采购单，返回数量、金额、Top N、总计与展示数据，金额由程序计算。两类订单不能混加。
+    params:
+      objectType:
+        type: string
+        description: Order（默认，销售）或 PurchaseOrder（采购）
+      groupBy:
+        type: string
+        description: supplierId（默认）、materialId、status；Order还支持customerId
+      filters:
+        type: object
+        description: 可选等值筛选字典，如 {"materialId":"MAT-001","status":"open"}
+      affectedOnly:
+        type: boolean
+        description: 默认false；true仅汇总延期超过缓冲的open销售订单
+      topN:
+        type: integer
+        description: 按金额降序展示前N组，1至100，默认20；总计始终覆盖全部筛选记录
+    returns: object
 actions:
   submitSupplierChange:
     description: 提交原供应商 的替代供货方案，产生 pending 申请；需先评估并经用户确认

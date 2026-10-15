@@ -17,3 +17,5 @@
 `04-ontopilot-supplier.png` 为本轮 Chrome 截图，来自本地运行的开源 OntoPilot（MIT）供应商示例，包含合成业务数据和真实 DeepSeek 问答。未展示 API key；不是 Palantir 官方产品截图。
 
 `05-ontopilot-home.png` 为合并采购 Demo 的本地首页截图，统计来自实际 Runtime；`04-ontopilot-supplier.png` 更新为统一编号与新版数据下的真实 DeepSeek 对话。前两张原创 SVG 也已统一为相同物料编号与本地执行边界。
+
+`06-ontopilot-aggregate.png` 为本地 Chrome 验证的流式对话聚合截图，展示真实工具计算的延期影响销售额、供应商分组条形图和明细表；不是 Palantir 官方产品截图。

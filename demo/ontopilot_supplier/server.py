@@ -59,6 +59,8 @@ def create_app():
                 return JSONResponse({"detail": "此示例使用本地配置的 DeepSeek 模型"}, status_code=400)
         return await call_next(request)
 
+    from streaming import register_stream
+    register_stream(app, sessions.session_store)
     app.include_router(chat_router, prefix="/api")
     app.include_router(sessions_router, prefix="/api")
     app.include_router(audit_router, prefix="/api")

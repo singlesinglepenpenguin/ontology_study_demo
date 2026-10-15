@@ -19,6 +19,31 @@ class RuntimeTest(unittest.TestCase):
     def execute(self, role, user, action, params):
         return self.rt.execute_action(user, role, action, params, confirmed=True)
 
+    def test_aggregate_sales_totals_and_topn(self):
+        rows = self.rt._store.query("Order", {}, None)
+        result = self.rt.call_function("v", "viewer", "aggregateOrders", {"groupBy": "materialId", "topN": 2})
+        self.assertEqual(result["totals"]["count"], 48)
+        self.assertEqual(result["totals"]["amount"], sum(o["salesAmount"] for o in rows))
+        self.assertEqual(result["totalGroups"], 6)
+        self.assertEqual(len(result["rows"]), 2)
+        self.assertGreater(result["rows"][0]["amount"], result["rows"][1]["amount"])
+
+    def test_aggregate_impact_and_purchase_separate(self):
+        call = lambda params: self.rt.call_function("v", "viewer", "aggregateOrders", params)
+        impact = call({"affectedOnly": True})
+        self.assertEqual(impact["totals"]["count"], 8)
+        self.assertEqual(impact["totals"]["amount"], 277000)
+        purchases = self.rt._store.query("PurchaseOrder", {}, None)
+        result = call({"objectType": "PurchaseOrder", "groupBy": "supplierId"})
+        self.assertEqual(result["totals"]["count"], 18)
+        self.assertEqual(result["totals"]["amount"], sum(o["totalAmount"] for o in purchases))
+        empty = call({"filters": {"supplierId": "missing"}})
+        self.assertEqual(empty["rows"], [])
+        self.assertEqual(empty["totals"]["amount"], 0)
+        for invalid in ({"groupBy": "unknown"}, {"filters": {"sql": "x"}},
+                        {"objectType": "PurchaseOrder", "affectedOnly": True}, {"topN": 0}):
+            with self.assertRaises(KeyError): call(invalid)
+
     def test_links_and_functions_use_real_runtime(self):
         trace = self.rt.call_function("v", "viewer", "traceOrderRelations", {"orderId": "O1"})
         self.assertEqual(trace["customer"][0]["customerId"], "C1")

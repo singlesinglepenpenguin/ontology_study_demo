@@ -1,0 +1,24 @@
+      if (__SUPPLIER_DEMO__) {
+        const assistant: Message = { role: 'assistant', content: '', timestamp: new Date().toISOString(), steps: [], charts: [], streaming: true }
+        setMessages(prev => [...prev, assistant])
+        const update = (fn: (msg: Message) => Message) => setMessages(prev => prev.map(msg => msg.role === 'assistant' && msg.timestamp === assistant.timestamp ? fn(msg) : msg))
+        try {
+          await supplierStream({ session_id: sessionId, user_id: user?.userId || user?.id,
+            role: user?.role, warehouse_id: user?.warehouse || '', message, confirmed,
+            model_id: selectedModel || undefined, ontology_id: selectedOntology || undefined }, event => {
+            if (event.type === 'session') setSessionId(event.session_id)
+            if (event.type === 'progress') update(msg => ({ ...msg, steps: [...(msg.steps || []), event.text] }))
+            if (event.type === 'trace') { const { type, ...trace } = event; handleTraceEvent(trace as TraceEvent) }
+            if (event.type === 'answer_delta') update(msg => ({ ...msg, content: msg.content + event.text }))
+            if (event.type === 'visualization') update(msg => ({ ...msg, charts: [...(msg.charts || []), event] }))
+            if (event.type === 'complete') {
+              setAwaitingConfirmation(event.awaiting_confirmation)
+              update(msg => ({ ...msg, content: event.response, streaming: false, awaiting_confirmation: event.awaiting_confirmation }))
+              fetchSessions()
+            }
+          })
+        } catch (error) {
+          update(msg => ({ ...msg, streaming: false, content: msg.content + '\n\n⚠️ ' + (error instanceof Error ? error.message : '请求失败') }))
+        } finally { update(msg => ({ ...msg, streaming: false })) }
+        return
+      }
