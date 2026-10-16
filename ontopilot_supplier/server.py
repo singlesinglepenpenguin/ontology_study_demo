@@ -73,11 +73,21 @@ def create_app():
     app.include_router(audit_router, prefix="/api")
     # Read-only metadata endpoints power the original ontology graph UI.
     for route in settings_router.routes:
-        if getattr(route, "methods", set()) == {"GET"}:
+        if getattr(route, "methods", set()) == {"GET"} and getattr(route, "path", None) != "/ontology/list":
             from fastapi import APIRouter
             readonly = APIRouter()
             readonly.routes.append(route)
             app.include_router(readonly, prefix="/api")
+
+    @app.get("/api/ontology/list")
+    async def active_ontology(request: Request):
+        schema = request.app.state.schema
+        filename = request.app.state.current_ontology_id
+        # Other YAMLs are source material for dataset generation, not selectable
+        # runtimes. Directory iteration order must never select the wrong model.
+        return {"ontologies": [{"id": filename, "filename": filename,
+                "name": "采购供应商本体", "object_types": schema.object_type_names,
+                "actions": schema.action_names, "functions": schema.function_names}]}
 
     @app.get("/api/users")
     async def users():

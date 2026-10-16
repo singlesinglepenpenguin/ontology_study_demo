@@ -178,6 +178,15 @@ class AccountTest(unittest.TestCase):
         self.assertEqual(self.store.get(result['session_id'])['user_id'], 'buyer-demo')
         self.assertEqual(self.viewer.get('/api/sessions/' + result['session_id']).status_code, 403)
 
+    def test_initial_browser_choice_uses_the_active_procurement_model(self):
+        options = self.viewer.get('/api/ontology/list').json()['ontologies']
+        self.assertEqual([option['id'] for option in options], ['ontology_schema.yaml'])
+        self.assertEqual(len(options[0]['functions']), 8)
+        self.assertEqual(len(options[0]['actions']), 3)
+        settings = self.viewer.get('/api/settings').json()
+        result = self.turn(self.viewer, ontology_id=options[0]['id'], model_id=settings['active_model_id'])
+        self.assertIn('response', result)
+
     def test_relogin_rotates_identity_and_hides_previous_account(self):
         self.viewer.post('/api/login', json={'username': 'buyer', 'password': 'demo123'})
         self.assertNotIn(self.sid, [s['id'] for s in self.viewer.get('/api/sessions').json()['sessions']])
