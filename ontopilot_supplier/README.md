@@ -22,7 +22,7 @@ cp .env.example .env
 .venv/bin/python run.py serve
 ```
 
-打开 **http://127.0.0.1:8000**。前端构建产物已经随项目提交，直接启动无需 Node.js。
+打开 **http://127.0.0.1:8000**。项目自带已构建的前端页面，直接启动无需 Node.js。
 
 | 角色 | 登录名 | 密码 |
 |---|---|---|
@@ -48,7 +48,7 @@ cd ..
 .venv/bin/python run.py serve
 ```
 
-构建默认就是采购模式。提交前需要同时更新 `frontend/dist`，让其他人 clone 后无需额外构建。开发时可在后端运行的同时执行 `npm run dev`，访问其输出的开发地址。
+构建默认就是采购模式。修改前端后需要同时更新 `frontend/dist`，让其他人 clone 后无需额外构建。开发时可在后端运行的同时执行 `npm run dev`，访问其输出的开发地址。
 
 ## 重置教学数据
 
@@ -62,4 +62,4 @@ cd ..
 
 ## 代码来源
 
-`ontopilot/`、`api/` 和前端基础代码来自 [jingw2/ontopilot](https://github.com/jingw2/ontopilot)，基于提交 `dc9ac375b979c7ea4fa95d209194f55b10f909f9` 适配。运行所需代码已包含在本目录；它是本地教学 Demo，不是 Palantir 官方产品，也未连接真实采购系统。
+`ontopilot/`、`api/` 和前端基础代码来自 [jingw2/ontopilot](https://github.com/jingw2/ontopilot)并针对采购场景适配。运行所需代码已包含在本目录；它是本地教学 Demo，不是 Palantir 官方产品，也未连接真实采购系统。

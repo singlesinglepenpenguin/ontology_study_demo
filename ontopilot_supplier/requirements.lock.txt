@@ -1,4 +1,4 @@
-# Exact versions exported from upstream uv.lock (dc9ac375).
+# Locked Python runtime dependencies.
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anthropic==0.111.0

@@ -1,7 +1,6 @@
 {
   "version": "procurement-merged-v2",
   "snapshotDate": "2026-07-01",
-  "upstreamCommit": "dc9ac375b979c7ea4fa95d209194f55b10f909f9",
   "counts": {
     "Material": 6,
     "Supplier": 8,
@@ -34,6 +33,5 @@
     "Supplier.delayDays",
     "Material.reservedStock"
   ],
-  "note": "原项目也为教学数据；增量价格相对sourceSupplierId报价；库存预留为新增假设；未接真实企业数据。",
-  "seedSha256": "18cedf898984e87b47857c872e188e9c10a7b7d0f32c4b3af86054a5dde90da5"
+  "note": "原项目也为教学数据；增量价格相对sourceSupplierId报价；库存预留为新增假设；未接真实企业数据。"
 }

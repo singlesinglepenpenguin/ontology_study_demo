@@ -6,7 +6,6 @@ IDs and fields survive; the old S1/P1 lesson maps to SUP-001/MAT-001.
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 from pathlib import Path
 
@@ -135,7 +134,6 @@ def build():
                 valid = {r[target_pk] for r in seed.get(link["target"], [])}
                 assert all(v in valid for v in (value if isinstance(value,list) else [value])), (kind, value)
     manifest = {"version": "procurement-merged-v2", "snapshotDate": "2026-07-01",
-                "upstreamCommit": "dc9ac375b979c7ea4fa95d209194f55b10f909f9",
                 "counts": {k: len(v) for k,v in seed.items()},
                 "upstreamCounts": {k: len(v) for k,v in source.items()},
                 "legacyMapping": {"S1": "SUP-001", "S2": "SUP-006", "S3": "SUP-004", "P1": "MAT-001", "P2": "MAT-002"},
@@ -143,7 +141,6 @@ def build():
                 "note": "原项目也为教学数据；增量价格相对sourceSupplierId报价；库存预留为新增假设；未接真实企业数据。"}
     for name, data in [("ontology_schema.yaml", schema), ("seed_data.yaml", seed)]:
         (HERE / "config" / name).write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False))
-    manifest["seedSha256"] = hashlib.sha256((HERE / "config/seed_data.yaml").read_bytes()).hexdigest()
     (HERE / "dataset_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps(manifest["counts"], ensure_ascii=False))
 
