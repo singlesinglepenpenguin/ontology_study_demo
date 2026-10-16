@@ -8,9 +8,7 @@ from pathlib import Path
 import sys
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-UPSTREAM = ROOT / "repos" / "ontopilot"
-sys.path.insert(0, str(UPSTREAM))
+sys.path.insert(0, str(HERE))
 
 
 def load_env():

@@ -6,18 +6,18 @@
 
 ## 启动
 
-需要 Python 3.11 或更高版本。在本仓库根目录执行：
+需要 Python 3.11 或更高版本。在 `demo/ontopilot_supplier` 目录执行：
 
 ```bash
-python3 -m venv repos/ontopilot/.venv
-repos/ontopilot/.venv/bin/python -m pip install -r demo/ontopilot_supplier/requirements.lock.txt -e ./repos/ontopilot
-cp demo/ontopilot_supplier/.env.example demo/ontopilot_supplier/.env
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock.txt
+cp .env.example .env
 ```
 
-编辑 `demo/ontopilot_supplier/.env`，把 `DEEPSEEK_API_KEY` 换成你自己的 Key。模型名可以保持 `deepseek-v4-flash`。这个文件已被忽略，不要把它提交到 Git。
+编辑 `.env`，把 `DEEPSEEK_API_KEY` 换成你自己的 Key。模型名可以保持 `deepseek-v4-flash`。这个文件已被忽略，不要把它提交到 Git。
 
 ```bash
-repos/ontopilot/.venv/bin/python demo/ontopilot_supplier/run.py serve
+.venv/bin/python run.py serve
 ```
 
 浏览器打开 http://127.0.0.1:8000 。
@@ -28,10 +28,10 @@ repos/ontopilot/.venv/bin/python demo/ontopilot_supplier/run.py serve
 | 采购员 | buyer | demo123 |
 | 审批员 | approver | demo123 |
 
-各账号能看什么、能做什么，见同目录的《功能说明》。
+这个服务的功能详见 [features.md](features.md)：本体配置、数据明细、模型配置、用户管理，以及三个账号分别能做什么。
 
 如果想把业务数据恢复成最初的教学记录，而保留已有对话：
 
 ```bash
-repos/ontopilot/.venv/bin/python demo/ontopilot_supplier/run.py reset
+.venv/bin/python run.py reset
 ```

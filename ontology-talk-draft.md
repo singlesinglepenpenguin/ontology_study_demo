@@ -160,25 +160,13 @@ Palantir 在 2024 年 AIPCon 的 Tyson 案例材料里，介绍了将旧平台 A
 
 | 路线 | 本次提供什么 | 运行前提 | 能学到什么 |
 |---|---|---|---|
-| 本地教学演示 | `demo/demo.py` | Python，无密钥 | 对象、关系、金额测算、审批和留痕 |
+| 本地采购 Demo | `demo/ontopilot_supplier` | Python 依赖和自己的 DeepSeek Key | 对象、关系、计算、审批和对话 |
 | Neo4j GraphRAG Agent | 已克隆 `repos/graphrag-examples` | Python 依赖、Neo4j、模型密钥 | 用本体指导检索和 Agent 工具 |
 | Palantir 原生项目 | 社区注册库和 OSDK 资料 | 可访问的 Foundry/AIP 环境和权限 | 使用平台对象、函数和操作 |
 
-### 路线一：现场五分钟演示
+### 路线一：本机采购 Demo
 
-【演示提示：在当前研究文件夹打开终端。完整操作见 `demo/README.md`。】
-
-```bash
-python3 demo/demo.py
-python3 demo/demo.py --budget 1000
-python3 demo/demo.py --approve
-python3 demo/demo.py --role manager --approve
-python3 demo/demo.py
-```
-
-第一条命令会找出两张受影响订单，并计算 10 万元销售额、3 万元毛利口径和 2,000 元额外成本。第二条把预算降到 1,000 元，方案就不满足约束。第三条模拟分析员直接批准，会被拒绝。第四条模拟经理审批，写入本地订单和日志。第五条再查时，就不再出现原来的延期风险。
-
-需要明确告诉观众：这个示例没有调用大模型，是用规则模拟决策流程。它让大家先看懂本体和操作的关系。真正接模型时，可以让 AI 理解问题、选择查询工具和解释方案，同时保留代码中的计算与执行校验。
+启动和三个账号见 `demo/ontopilot_supplier/README.md`。页面上的本体配置、数据明细、模型配置和权限见 `demo/ontopilot_supplier/features.md`。
 
 ### 路线二：研究一个真实可 clone 的开源 Agent
 
@@ -186,7 +174,7 @@ python3 demo/demo.py
 
 其中的 `customer-graph` 示例把客户、订单、商品和退货等信息组织成图，利用本体文件指导抽取，并用 Semantic Kernel 构建 Agent。官方教程说明，数据包含 H&M 样本及模拟增强内容；它不是 Palantir 客户数据。[来源：Neo4j Customer Graph Agent 教程](https://neo4j.com/developer/genai-ecosystem/customer-graph-agent/)
 
-这条路线适合体验“本体帮助 AI 理解业务、找到相关事实”。它主要面向分析问答，不能据此声称已经具备 Palantir 的完整权限、审批和业务写回能力。具体安装顺序、环境要求和本次发现的文档拼写问题，见 `实践指南.md`。
+这条路线适合体验“本体帮助 AI 理解业务、找到相关事实”。它主要面向分析问答，不能据此声称已经具备 Palantir 的完整权限、审批和业务写回能力。具体安装顺序、环境要求和本次发现的文档拼写问题，见 `practice-guide.md`。
 
 ### 路线三：在 Palantir 原生环境中体验
 
@@ -218,4 +206,4 @@ Palantir 的 [AIP Community Registry](https://github.com/palantir/aip-community-
 **问：这次有没有把开源 Agent 全部跑通？**  
 答：本地零依赖教学示例已做运行验证；Neo4j 项目已克隆并检查关键代码，但没有配置数据库和模型密钥，因此没有宣称端到端跑通。Palantir 原生项目也没有在平台里部署。
 
-完整来源索引见 [资料来源.md](资料来源.md)，复现步骤及验证边界见 [实践指南.md](实践指南.md)。
+完整来源索引见 [sources.md](sources.md)，复现步骤及验证边界见 [practice-guide.md](practice-guide.md)。

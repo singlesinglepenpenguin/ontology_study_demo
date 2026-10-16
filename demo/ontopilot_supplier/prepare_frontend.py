@@ -2,7 +2,7 @@
 from pathlib import Path
 import shutil
 
-from run import UPSTREAM
+from run import HERE
 
 
 def replace_once(path: Path, original: str, replacement: str):
@@ -15,7 +15,7 @@ def replace_once(path: Path, original: str, replacement: str):
 
 
 def main():
-    root = UPSTREAM / "frontend"
+    root = HERE / "frontend"
     replace_once(
         root / "src/components/LoginPage.tsx",
         "const ACCOUNTS: { username: string; label: string; password: string; desc: string }[] = [",

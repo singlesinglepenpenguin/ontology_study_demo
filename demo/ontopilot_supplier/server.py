@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from run import HERE, UPSTREAM, get_llm
+from run import HERE, get_llm
 from runtime import build_runtime, DEFAULT_DB
 
 
@@ -105,7 +105,7 @@ def create_app():
     async def overview(request: Request):
         return request.app.state.runtime.call_function("demo-home", "viewer", "getProcurementOverview", {})
 
-    dist = UPSTREAM / "frontend" / "dist"
+    dist = HERE / "frontend" / "dist"
     if dist.exists():
         app.mount("/", StaticFiles(directory=dist, html=True), name="frontend")
     return app

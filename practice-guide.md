@@ -14,17 +14,11 @@
 | Palantir 社区注册库 | 已克隆，已阅读相关项目说明 | 未导入 Foundry，未验证平台运行 |
 | Palantir OSDK TypeScript | 已核实官方仓库与文档 | 仅提供链接，没有克隆或部署 |
 
-本地验证覆盖金额、预算、角色与审批、库存不足、过期方案、只读不写文件、审批后状态持久化、重复执行拦截。输出见 [demo/运行验证.txt](demo/运行验证.txt)。
+早期零依赖规则脚本已从本仓库移除。现在可运行的采购示例在 `demo/ontopilot_supplier/`，启动和账号见该目录 README，功能见 [features.md](demo/ontopilot_supplier/features.md)。
 
-## 2. 零依赖版本：现在就能运行
+## 2. 采购 Demo：现在就能运行
 
-在本文件所在目录执行：
-
-```bash
-python3 demo/demo.py
-```
-
-操作说明见 [demo/README.md](demo/README.md)。默认只读，添加经理角色和审批参数才写入本地状态文件。这是概念模拟，不是 Palantir 后端，也没有连接真实采购系统。
+在 `demo/ontopilot_supplier` 按 [README](demo/ontopilot_supplier/README.md) 安装依赖并填写自己的 API Key，然后执行 `python run.py serve`。功能见 [features.md](demo/ontopilot_supplier/features.md)。
 
 ## 3. Neo4j：带本体文件的真实 Agent 示例
 

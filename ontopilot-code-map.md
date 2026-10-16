@@ -1,39 +1,26 @@
 # OntoPilot 代码依赖图谱与阅读路线
 
-核对日期：2026-10-15。按本地上游提交 `dc9ac375b979c7ea4fa95d209194f55b10f909f9` 和当前采购扩展代码整理。使用说明见 [功能说明](demo/ontopilot_supplier/功能说明.md)。
+核对日期：2026-10-15。按本地上游提交 `dc9ac375b979c7ea4fa95d209194f55b10f909f9` 和当前采购扩展代码整理。使用说明见 [features.md](demo/ontopilot_supplier/features.md)。
 
-**建议先看当前采购 Demo 的一次问答，再向下读原 Runtime。** 这样能把每个文件对应到真实数据和页面行为。`repos/ontopilot/` 是原项目，`demo/ontopilot_supplier/` 是我们新增的业务实现与可复现适配层。
+**建议先看当前采购 Demo 的一次问答，再向下读 Runtime。** 运行所需的原项目代码和采购业务代码都在 `demo/ontopilot_supplier/`。
 
 图使用 Mermaid；支持 Mermaid 的 Markdown 阅读器可以直接显示。每张图后附有文件说明，不支持图形渲染时也可以沿文字阅读。调用图中的实线表示调用或组装依赖，虚线表示配置、生成或数据流；不将它们混称为 Python import。
 
 ## 1. 先辨认目录和两个运行入口
 
 ```text
-palantir/
-├── repos/ontopilot/                 原开源项目克隆
-│   ├── ontopilot/                   本体 Runtime、Agent、规则、权限、存储
-│   ├── api/                         原 FastAPI 应用与路由
-│   ├── frontend/                    原 React 应用；本机已应用采购界面适配
-│   ├── config/                      原多场景 YAML 和教学数据
-│   ├── tests/                       原项目测试与场景测试数据
-│   ├── pyproject.toml               Python 依赖与 CLI 入口
-│   └── uv.lock                      上游依赖锁
-└── demo/ontopilot_supplier/          当前采购 Demo
-    ├── run.py                       启动、模型配置、CLI
-    ├── server.py                    当前 FastAPI 应用
-    ├── auth.py                      服务端登录凭据、会话归属与账号隔离
-    ├── streaming.py                 浏览器流式 Agent 与 POST SSE
-    ├── inspection.py                本体状态与 SQLite 业务明细只读 API
-    ├── runtime.py                   组装原 Runtime，接入采购函数与操作
-    ├── domain.py                    采购计算、审批和事务
-    ├── build_dataset.py             合并模型、生成数据、校验外键
-    ├── prepare_frontend.py          将已跟踪的前端适配复制/应用到原前端
-    ├── model/                       扩展定义与前端适配源文件
-    ├── config/                      生成后的模型、数据、权限和上下文
-    ├── test_*.py                    当前 Demo 的程序测试
-    ├── smoke_live.py                原 Agent 的真实模型问答测试
-    ├── smoke_stream.py              当前流式 HTTP 问答测试
-    └── browser_smoke.mjs            Chrome 页面验证
+demo/ontopilot_supplier/
+├── ontopilot/                 本体 Runtime、Agent、规则、权限、存储
+├── api/                       FastAPI 路由
+├── frontend/                  采购页面和已构建的 dist
+├── run.py                     启动、模型配置、CLI
+├── server.py                  当前 FastAPI 应用
+├── streaming.py               浏览器流式 Agent
+├── runtime.py                 组装 Runtime，接入采购函数
+├── domain.py                  采购计算、审批和事务
+├── config/                    模型、教学数据、权限
+├── model/                     扩展定义与前端适配源文件
+└── features.md                页面功能说明
 ```
 
 | 运行方式 | 启动入口 | Agent 路径 |
@@ -44,7 +31,7 @@ palantir/
 | 原项目网页/API | 在原仓库启动 `uvicorn api.main:app` | `/api/chat` → 原 LangGraph Agent |
 | 原项目 CLI | 安装包后的 `ontopilot chat` / `ontopilot run_case` | `ontopilot/cli.py` |
 
-原仓库的 [main.py](repos/ontopilot/main.py) 只打印欢迎语，不能用来理解 FastAPI 启动过程。当前网页不走原 `api/main.py` 的应用初始化，而是复用它下面的一部分路由和核心库。
+原仓库的 [main.py](demo/ontopilot_supplier/main.py) 只打印欢迎语，不能用来理解 FastAPI 启动过程。当前网页不走原 `api/main.py` 的应用初始化，而是复用它下面的一部分路由和核心库。
 
 ## 2. 当前采购 Demo 的代码调用图
 
@@ -87,7 +74,7 @@ flowchart TD
 
 ### 3.1 Runtime 直接组装哪些组件
 
-下面各模块均位于 `repos/ontopilot/ontopilot/`。这里画的是 runtime.py 中的核心导入与组装依赖。
+下面各模块均位于 `demo/ontopilot_supplier/ontopilot/`。这里画的是 runtime.py 中的核心导入与组装依赖。
 
 ```mermaid
 flowchart LR
@@ -108,16 +95,16 @@ flowchart LR
 
 | 模块 | 直接依赖的核心模块 | 负责什么 |
 |---|---|---|
-| [schema.py](repos/ontopilot/ontopilot/schema.py) | 无其他核心模块；读取 YAML | 将定义解析为对象、关系、函数和操作的数据结构 |
-| [store.py](repos/ontopilot/ontopilot/store.py) | schema | SQLite 读写、查询、外键遍历、复制数据分支 |
-| [governance.py](repos/ontopilot/ontopilot/governance.py) | 无其他核心模块；读取权限 YAML | 判断角色能查什么、调用什么、执行什么及确认要求 |
-| [context.py](repos/ontopilot/ontopilot/context.py) | store、governance | 把上下文配置指定的业务记录组织为文本 |
-| [functions.py](repos/ontopilot/ontopilot/functions.py) | schema、store | 注册并调用内置 Python 业务算法 |
-| [actions.py](repos/ontopilot/ontopilot/actions.py) | schema、store、governance | 参数检查、预览、确认检查、创建或编辑对象 |
-| [simulation.py](repos/ontopilot/ontopilot/simulation.py) | schema、store、functions | 在数据副本中比较物流运单方案 |
-| [trace.py](repos/ontopilot/ontopilot/trace.py) | 无其他核心模块 | 内存记录本轮事件，转为前端可消费的字典 |
-| [audit.py](repos/ontopilot/ontopilot/audit.py) | 无其他核心模块；使用 SQLite | 持久化审计记录并查询 |
-| [runtime.py](repos/ontopilot/ontopilot/runtime.py) | 上述全部组件 | 对外提供统一查询、函数、操作、仿真入口并组织校验和记录 |
+| [schema.py](demo/ontopilot_supplier/ontopilot/schema.py) | 无其他核心模块；读取 YAML | 将定义解析为对象、关系、函数和操作的数据结构 |
+| [store.py](demo/ontopilot_supplier/ontopilot/store.py) | schema | SQLite 读写、查询、外键遍历、复制数据分支 |
+| [governance.py](demo/ontopilot_supplier/ontopilot/governance.py) | 无其他核心模块；读取权限 YAML | 判断角色能查什么、调用什么、执行什么及确认要求 |
+| [context.py](demo/ontopilot_supplier/ontopilot/context.py) | store、governance | 把上下文配置指定的业务记录组织为文本 |
+| [functions.py](demo/ontopilot_supplier/ontopilot/functions.py) | schema、store | 注册并调用内置 Python 业务算法 |
+| [actions.py](demo/ontopilot_supplier/ontopilot/actions.py) | schema、store、governance | 参数检查、预览、确认检查、创建或编辑对象 |
+| [simulation.py](demo/ontopilot_supplier/ontopilot/simulation.py) | schema、store、functions | 在数据副本中比较物流运单方案 |
+| [trace.py](demo/ontopilot_supplier/ontopilot/trace.py) | 无其他核心模块 | 内存记录本轮事件，转为前端可消费的字典 |
+| [audit.py](demo/ontopilot_supplier/ontopilot/audit.py) | 无其他核心模块；使用 SQLite | 持久化审计记录并查询 |
+| [runtime.py](demo/ontopilot_supplier/ontopilot/runtime.py) | 上述全部组件 | 对外提供统一查询、函数、操作、仿真入口并组织校验和记录 |
 
 理解主干时，先看 Runtime 的公开方法：`query`、`traverse`、`call_function`、`preview_action`、`execute_action`、`simulate`。随后跟进被调用组件，不必一开始通读 functions.py 的所有行业算法。
 
@@ -180,12 +167,12 @@ sequenceDiagram
 
 按下面顺序跳转，可以看到每一层真正做了什么：
 
-1. [App.tsx](repos/ontopilot/frontend/src/App.tsx) 的 `sendMessage`：采购模式分支创建助手消息，收到事件后更新文字、步骤和图表。
+1. [App.tsx](demo/ontopilot_supplier/frontend/src/App.tsx) 的 `sendMessage`：采购模式分支创建助手消息，收到事件后更新文字、步骤和图表。
 2. [supplierStream.ts 源文件](demo/ontopilot_supplier/model/supplierStream.ts)：fetch 读取响应流，按 SSE 帧解析，分辨完成、失败与连接中断。
 3. [streaming.py](demo/ontopilot_supplier/streaming.py) 的 `register_stream`：建立/检查会话，拒绝同会话并发请求，准备事件队列。
 4. 同文件的 `stream_turn`：构造提示词，调用 `model.astream`，合并模型的工具参数碎片，执行工具。
-5. [tools.py](repos/ontopilot/ontopilot/tools.py) 的 `call_function`：把调用交给 Runtime。
-6. [原 runtime.py](repos/ontopilot/ontopilot/runtime.py) 的 `call_function`：检查角色的函数权限，调用注册表，写审计和 Trace。
+5. [tools.py](demo/ontopilot_supplier/ontopilot/tools.py) 的 `call_function`：把调用交给 Runtime。
+6. [原 runtime.py](demo/ontopilot_supplier/ontopilot/runtime.py) 的 `call_function`：检查角色的函数权限，调用注册表，写审计和 Trace。
 7. [Demo runtime.py](demo/ontopilot_supplier/runtime.py) 的注册映射：`aggregateOrders` 对应 `service.aggregate_orders`。
 8. [domain.py](demo/ontopilot_supplier/domain.py) 的 `aggregate_orders`：检查分组白名单、筛选参数、口径，读取对象，用 Decimal 累加金额，排序并返回。
 9. [SupplierActivity.tsx 源文件](demo/ontopilot_supplier/model/SupplierActivity.tsx)：直接把结果画成条形图与表格。
@@ -256,9 +243,9 @@ flowchart LR
 
 | 可持续修改的源文件 | 应用后的运行文件 |
 |---|---|
-| `demo/ontopilot_supplier/model/SupplierDemoHome.tsx` | `repos/ontopilot/frontend/src/components/SupplierDemoHome.tsx` |
-| `demo/ontopilot_supplier/model/SupplierActivity.tsx` | `repos/ontopilot/frontend/src/components/SupplierActivity.tsx` |
-| `demo/ontopilot_supplier/model/supplierStream.ts` | `repos/ontopilot/frontend/src/supplierStream.ts` |
+| `demo/ontopilot_supplier/model/SupplierDemoHome.tsx` | `demo/ontopilot_supplier/frontend/src/components/SupplierDemoHome.tsx` |
+| `demo/ontopilot_supplier/model/SupplierActivity.tsx` | `demo/ontopilot_supplier/frontend/src/components/SupplierActivity.tsx` |
+| `demo/ontopilot_supplier/model/supplierStream.ts` | `demo/ontopilot_supplier/frontend/src/supplierStream.ts` |
 | `demo/ontopilot_supplier/model/stream_branch.txt` | 插入原 App.tsx 的采购流式分支 |
 | `demo/ontopilot_supplier/prepare_frontend.py` | 对原组件、构建配置和类型声明应用适配 |
 
@@ -291,7 +278,7 @@ flowchart LR
 
 ## 8. 外部技术依赖
 
-版本声明以 [pyproject.toml](repos/ontopilot/pyproject.toml) 和 [frontend/package.json](repos/ontopilot/frontend/package.json) 为准；本机 Python 安装使用从上游锁文件导出的 [requirements.lock.txt](demo/ontopilot_supplier/requirements.lock.txt)。下面说明各依赖在代码中的职责，不表示每个包都被每条运行路径使用。
+版本声明以 [pyproject.toml](demo/ontopilot_supplier/pyproject.toml) 和 [frontend/package.json](demo/ontopilot_supplier/frontend/package.json) 为准；本机 Python 安装使用从上游锁文件导出的 [requirements.lock.txt](demo/ontopilot_supplier/requirements.lock.txt)。下面说明各依赖在代码中的职责，不表示每个包都被每条运行路径使用。
 
 | 依赖 | 使用位置 | 用途 |
 |---|---|---|
@@ -319,12 +306,12 @@ flowchart LR
 | 2 | [扩展定义](demo/ontopilot_supplier/model/supplier_extension.yaml) 与 [权限](demo/ontopilot_supplier/config/permissions.yaml) | 对象怎样关联，谁能调用哪些能力？ |
 | 3 | [domain.py](demo/ontopilot_supplier/domain.py) | 影响、费用、约束和聚合具体怎么算？ |
 | 4 | [Demo runtime.py](demo/ontopilot_supplier/runtime.py) | 业务代码怎样注册进原框架？ |
-| 5 | [原 runtime.py](repos/ontopilot/ontopilot/runtime.py)、[store.py](repos/ontopilot/ontopilot/store.py)、[schema.py](repos/ontopilot/ontopilot/schema.py) | 本体定义怎样变成可查询和执行的能力？ |
-| 6 | [tools.py](repos/ontopilot/ontopilot/tools.py)、[prompt.py](repos/ontopilot/ontopilot/prompt.py)、[streaming.py](demo/ontopilot_supplier/streaming.py) | 模型如何知道工具、选择工具并逐步返回结果？ |
+| 5 | [原 runtime.py](demo/ontopilot_supplier/ontopilot/runtime.py)、[store.py](demo/ontopilot_supplier/ontopilot/store.py)、[schema.py](demo/ontopilot_supplier/ontopilot/schema.py) | 本体定义怎样变成可查询和执行的能力？ |
+| 6 | [tools.py](demo/ontopilot_supplier/ontopilot/tools.py)、[prompt.py](demo/ontopilot_supplier/ontopilot/prompt.py)、[streaming.py](demo/ontopilot_supplier/streaming.py) | 模型如何知道工具、选择工具并逐步返回结果？ |
 | 7 | [server.py](demo/ontopilot_supplier/server.py) 与 [前端流读取](demo/ontopilot_supplier/model/supplierStream.ts) | 浏览器与后端如何交换状态和结果？ |
-| 8 | [SupplierActivity.tsx](demo/ontopilot_supplier/model/SupplierActivity.tsx) 与 [App.tsx](repos/ontopilot/frontend/src/App.tsx) | 过程、文字、表格和图形如何显示？ |
+| 8 | [SupplierActivity.tsx](demo/ontopilot_supplier/model/SupplierActivity.tsx) 与 [App.tsx](demo/ontopilot_supplier/frontend/src/App.tsx) | 过程、文字、表格和图形如何显示？ |
 | 9 | [domain.py](demo/ontopilot_supplier/domain.py)、[runtime.py](demo/ontopilot_supplier/runtime.py)、[streaming.py](demo/ontopilot_supplier/streaming.py) | 计算、注册和对话循环实际写在哪里？ |
-| 10 | [原 agent.py](repos/ontopilot/ontopilot/agent.py)、[simulation.py](repos/ontopilot/ontopilot/simulation.py)、[原 README](repos/ontopilot/README.zh-CN.md) | 原通用框架还有哪些机制，与当前 Demo 有何差异？ |
+| 10 | [原 agent.py](demo/ontopilot_supplier/ontopilot/agent.py)、[simulation.py](demo/ontopilot_supplier/ontopilot/simulation.py)、[原 README](demo/ontopilot_supplier/README.zh-CN.md) | 原通用框架还有哪些机制，与当前 Demo 有何差异？ |
 
 ### 要改某项功能，先找哪几个文件
 

@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 import yaml
-from run import HERE, UPSTREAM
+from run import HERE
 
 
 def prop(description, kind="string"):
@@ -19,8 +19,8 @@ def prop(description, kind="string"):
 
 
 def build():
-    native = yaml.safe_load((UPSTREAM / "config/procurement_ontology.yaml").read_text())
-    source = yaml.safe_load((UPSTREAM / "config/procurement_seed.yaml").read_text())
+    native = yaml.safe_load((HERE / "config/procurement_ontology.yaml").read_text())
+    source = yaml.safe_load((HERE / "config/procurement_seed.yaml").read_text())
     extension = yaml.safe_load((HERE / "model/supplier_extension.yaml").read_text())
     schema = {"object_types": copy.deepcopy(native["object_types"]),
               "functions": copy.deepcopy(extension["functions"]), "actions": extension["actions"]}
