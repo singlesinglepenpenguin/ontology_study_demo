@@ -8,7 +8,15 @@ __pycache__/
 node_modules/
 *.db
 *.db-*
-repos/
+repos/*
+!repos/ontopilot/
+!repos/ontopilot/**
+repos/ontopilot/.git/
+repos/ontopilot/.venv/
+repos/ontopilot/frontend/node_modules/
+repos/ontopilot/frontend/e2e/
+repos/ontopilot/tests/
+repos/ontopilot/**/__pycache__/
 demo/ontopilot_supplier/config/settings.yaml
 demo/ontopilot_supplier/results/
 initial-snapshot.bundle

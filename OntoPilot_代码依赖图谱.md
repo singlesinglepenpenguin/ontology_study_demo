@@ -1,6 +1,6 @@
 # OntoPilot 代码依赖图谱与阅读路线
 
-核对日期：2026-10-15。按本地上游提交 `dc9ac375b979c7ea4fa95d209194f55b10f909f9` 和当前采购扩展代码整理。功能范围见 [功能说明](OntoPilot_功能说明.md)。
+核对日期：2026-10-15。按本地上游提交 `dc9ac375b979c7ea4fa95d209194f55b10f909f9` 和当前采购扩展代码整理。使用说明见 [功能说明](demo/ontopilot_supplier/功能说明.md)。
 
 **建议先看当前采购 Demo 的一次问答，再向下读原 Runtime。** 这样能把每个文件对应到真实数据和页面行为。`repos/ontopilot/` 是原项目，`demo/ontopilot_supplier/` 是我们新增的业务实现与可复现适配层。
 
@@ -323,7 +323,7 @@ flowchart LR
 | 6 | [tools.py](repos/ontopilot/ontopilot/tools.py)、[prompt.py](repos/ontopilot/ontopilot/prompt.py)、[streaming.py](demo/ontopilot_supplier/streaming.py) | 模型如何知道工具、选择工具并逐步返回结果？ |
 | 7 | [server.py](demo/ontopilot_supplier/server.py) 与 [前端流读取](demo/ontopilot_supplier/model/supplierStream.ts) | 浏览器与后端如何交换状态和结果？ |
 | 8 | [SupplierActivity.tsx](demo/ontopilot_supplier/model/SupplierActivity.tsx) 与 [App.tsx](repos/ontopilot/frontend/src/App.tsx) | 过程、文字、表格和图形如何显示？ |
-| 9 | [test_domain.py](demo/ontopilot_supplier/test_domain.py)、[test_runtime.py](demo/ontopilot_supplier/test_runtime.py)、[test_streaming.py](demo/ontopilot_supplier/test_streaming.py) | 哪些规则和集成行为有测试依据？ |
+| 9 | [domain.py](demo/ontopilot_supplier/domain.py)、[runtime.py](demo/ontopilot_supplier/runtime.py)、[streaming.py](demo/ontopilot_supplier/streaming.py) | 计算、注册和对话循环实际写在哪里？ |
 | 10 | [原 agent.py](repos/ontopilot/ontopilot/agent.py)、[simulation.py](repos/ontopilot/ontopilot/simulation.py)、[原 README](repos/ontopilot/README.zh-CN.md) | 原通用框架还有哪些机制，与当前 Demo 有何差异？ |
 
 ### 要改某项功能，先找哪几个文件
@@ -333,7 +333,7 @@ flowchart LR
 | 增加/调整教学记录 | build_dataset.py → 重新生成 → 按需重置教学数据库 |
 | 增加对象、属性、关系 | model/supplier_extension.yaml → build_dataset.py；检查种子与外键 |
 | 增加业务函数 | 扩展 YAML → domain.py 实现 → runtime.py 注册 → permissions.yaml；按需补充上下文 |
-| 改金额或可行性规则 | domain.py，对照 test_domain.py / test_runtime.py |
+| 改金额或可行性规则 | domain.py |
 | 改风险评分算法 | 原 functions.py 的 _analyze_supply_risk；若要持续保存在扩展仓库，建立本地实现并注册替换 |
 | 改 Agent 选工具习惯 | SupplierContext、函数描述、prompt、stream_turn；先确认是否为数据或算法问题 |
 | 改流式进度或失败处理 | streaming.py、model/supplierStream.ts、model/stream_branch.txt |
@@ -341,7 +341,7 @@ flowchart LR
 | 改首页和示例问题 | model/SupplierDemoHome.tsx |
 | 增加对外 API 或开放配置功能 | server.py；不要只改前端菜单 |
 
-文档图谱依据源码静态阅读整理。当前功能验证的范围与原项目未运行的测试，见 [验证记录](demo/ontopilot_supplier/验证记录.md)，不能用模块依赖图代替功能验证。
+文档图谱依据源码静态阅读整理。页面上能做什么见功能说明。
 
 
-本轮增加的入口：`auth.py` 提供带归属校验的 `PATCH /api/sessions/{sid}` 标题更新，并阻止只读快照续聊；`model/SessionTitleEditor.tsx` 是历史标题编辑窗口；`model/SupplierRequestStatus.tsx` 从当前数据库读取申请状态。`streaming.py` 在每轮模型调用前查询共享申请，将真实结果与读取时间交给模型并保存到工具记录。上述组件均由适配脚本复制到上游前端，可重新生成。功能覆盖及实测对话见 [对话案例清单](demo/ontopilot_supplier/对话案例清单.md)。
+本轮增加的入口：`auth.py` 提供带归属校验的 `PATCH /api/sessions/{sid}` 标题更新，并阻止只读快照续聊；`model/SessionTitleEditor.tsx` 是历史标题编辑窗口；`model/SupplierRequestStatus.tsx` 从当前数据库读取申请状态。`streaming.py` 在每轮模型调用前查询共享申请，将真实结果与读取时间交给模型并保存到工具记录。上述组件均由适配脚本复制到上游前端，可重新生成。
