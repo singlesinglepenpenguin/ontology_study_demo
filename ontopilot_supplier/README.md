@@ -50,28 +50,7 @@ cd ..
 
 构建默认就是采购模式。提交前需要同时更新 `frontend/dist`，让其他人 clone 后无需额外构建。开发时可在后端运行的同时执行 `npm run dev`，访问其输出的开发地址。
 
-## 验证与重置
-
-删除 `repos` 后全新 clone 的安装、35 项测试、真实模型聚合及采购审批闭环均已验证，见 [验证记录](VERIFICATION.md)。
-
-离线程序测试不需要 API Key，也不使用你的业务数据库：
-
-```bash
-.venv/bin/python run.py check
-.venv/bin/python -W ignore::ResourceWarning -m unittest discover -s . -p 'test_*.py'
-```
-
-另有真实模型浏览器测试，使用独立临时数据库。在一个终端启动测试服务，在另一个终端运行浏览器脚本：
-
-```bash
-# 终端 1
-.venv/bin/python serve_account_check.py
-# 终端 2，首次需安装浏览器（或设置 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH）
-cd frontend && npx playwright install chromium && cd ..
-node browser_accounts.mjs
-```
-
-该测试调用真实 DeepSeek，会产生 API 费用；验证历史隔离、提交、未审批执行被拒、审批、回到原会话读取新状态及执行。`smoke_stream.py` 可对当前 8000 服务验证聚合和多轮问答，会留下测试对话。
+## 重置教学数据
 
 恢复初始业务数据但保留已有对话和审计：
 
@@ -79,7 +58,7 @@ node browser_accounts.mjs
 .venv/bin/python run.py reset
 ```
 
-这是显式重置命令；正常启动和测试不会重置正在使用的业务数据。数据生成来源见 `dataset_manifest.json`；更新教学定义时运行 `build_dataset.py` 只重新生成配置文件。
+这是显式重置命令；正常启动不会重置正在使用的业务数据。数据生成来源见 `dataset_manifest.json`；更新教学定义时运行 `build_dataset.py` 只重新生成配置文件。
 
 ## 代码来源
 

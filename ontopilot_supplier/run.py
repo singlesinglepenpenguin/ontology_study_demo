@@ -48,7 +48,7 @@ def get_llm():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["check", "chat", "serve", "reset"])
+    parser.add_argument("command", choices=["chat", "serve", "reset"])
     parser.add_argument("message", nargs="?")
     parser.add_argument("--role", choices=["viewer", "buyer", "approver"], default="viewer")
     parser.add_argument("--port", type=int, default=8000)
@@ -63,18 +63,6 @@ def main():
     if args.command == "reset":
         build_runtime(reset=True)
         print("教学业务数据已重置；对话和审计记录保留。")
-    elif args.command == "check":
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp:
-            runtime = build_runtime(Path(tmp) / "check.db")
-            impact = runtime.call_function("viewer-demo", "viewer", "assessSupplierDelay", {"supplierId": "SUP-001", "materialId": "MAT-001"})
-            option = runtime.call_function("viewer-demo", "viewer", "assessSupplyOption", {"supplierId": "SUP-001", "optionId": "OPT-MAT-001-FAST"})
-            customer = runtime.traverse("viewer-demo", "viewer", "Order", "O1", "customer")
-            assert impact["orderIds"] == ["O1", "O2"]
-            assert impact["affectedSalesAmount"] == 70000
-            assert option["extraCost"] == 20000 and option["feasible"]
-            assert customer[0]["customerId"] == "C1"
-            print(json.dumps({"impact": impact, "option": option, "customer": customer}, ensure_ascii=False, indent=2))
     else:
         if not args.message:
             parser.error("chat 需要提供问题")
