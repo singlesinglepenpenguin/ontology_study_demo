@@ -67,7 +67,7 @@
 
 对话使用 DeepSeek。模型名称、接口地址已经写在项目里，网页的「模型配置」可以查看这项设置。
 
-这个 Demo 不在网页里更换模型，也不在网页里测试连通性。要让对话工作，请使用你自己的 DeepSeek API Key：把 `demo/ontopilot_supplier/.env.example` 复制为同目录的 `.env`，填入 `DEEPSEEK_API_KEY`。`.env` 只留在你的电脑上，不会进入这份代码仓库。
+这个 Demo 不在网页里更换模型，也不在网页里测试连通性。要让对话工作，请使用你自己的 DeepSeek API Key：把 `.env.example` 复制为同目录的 `.env`，填入 `DEEPSEEK_API_KEY`。`.env` 只留在你的电脑上，不会进入这份代码仓库。
 
 没有 Key 时，页面和已有数据仍可打开；一提问，对话会因为连不上模型而失败。
 

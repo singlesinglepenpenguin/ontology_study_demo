@@ -1,4 +1,4 @@
-"""Run from any working directory using OntoPilot's virtualenv Python."""
+"""Run the self-contained procurement demo from any working directory."""
 from __future__ import annotations
 
 import argparse
