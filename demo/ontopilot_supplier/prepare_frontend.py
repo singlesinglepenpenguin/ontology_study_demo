@@ -51,7 +51,7 @@ def main():
                  "  if (__SUPPLIER_DEMO__) return <SupplierDemoHome onStart={onStart} onQuestion={onDemoQuestion || onStart} />")
     replace_once(root / "src/App.tsx", "            onStart={startChat}",
                  "            onStart={startChat}\n            onDemoQuestion={question => { startChat(); void sendMessage(question, false) }}")
-    for filename in ("supplierStream.ts", "SupplierActivity.tsx", "SupplierOntologyPanel.tsx", "SupplierDataPanel.tsx"):
+    for filename in ("supplierStream.ts", "SupplierActivity.tsx", "SupplierOntologyPanel.tsx", "SupplierDataPanel.tsx", "SessionTitleEditor.tsx", "SupplierRequestStatus.tsx"):
         destination = root / ("src/supplierStream.ts" if filename.endswith(".ts") else f"src/components/{filename}")
         shutil.copy2(Path(__file__).parent / "model" / filename, destination)
     replace_once(root / "src/App.tsx", "import { useSSE } from './hooks/useSSE'",
@@ -102,6 +102,38 @@ def main():
                  "        {(__SUPPLIER_DEMO__ ? [...items.slice(0, 2), { id: 'data' as ViewType, label: '数据明细', icon: items[1].icon }, ...items.slice(2)] : items).map(item => (")
     replace_once(root / "src/App.tsx", "        {/* Users panel */}",
                  "        {__SUPPLIER_DEMO__ && activeView === 'data' && <div className=\"flex-1 overflow-hidden\"><SupplierDataPanel /></div>}\n\n        {/* Users panel */}")
+    replace_once(root / "src/App.tsx", "import { SupplierDataPanel } from './components/SupplierDataPanel'",
+                 "import { SupplierDataPanel } from './components/SupplierDataPanel'\nimport { SessionTitleEditor } from './components/SessionTitleEditor'")
+    replace_once(root / "src/App.tsx", "                        <button\n                          onClick={(e) => deleteSession(s.id, e)}",
+                 "                        {__SUPPLIER_DEMO__ && <SessionTitleEditor id={s.id} title={s.title} onSaved={fetchSessions} />}\n                        <button\n                          onClick={(e) => deleteSession(s.id, e)}")
+    replace_once(root / "src/components/ChatPanel.tsx", "import { SupplierActivity } from './SupplierActivity'",
+                 "import { SupplierActivity } from './SupplierActivity'\nimport { SupplierRequestStatus } from './SupplierRequestStatus'")
+    if "<SupplierRequestStatus loading={loading}" not in chat_path.read_text():
+        replace_once(chat_path, "      {/* Messages */}",
+                     "      {__SUPPLIER_DEMO__ && <SupplierRequestStatus loading={loading} />}\n      {/* Messages */}")
+    replace_once(root / "src/types.ts", "  toolResults?:", "  caseContext?: string\n  toolResults?:")
+    replace_once(root / "src/App.tsx", "toolResults?: Message['toolResults']", "toolResults?: Message['toolResults']; caseContext?: string")
+    replace_once(root / "src/App.tsx", "toolResults: m.toolResults,", "toolResults: m.toolResults, caseContext: m.caseContext,")
+    replace_once(root / "src/components/ChatPanel.tsx", "  const emptyState = messages.length === 0", "  const emptyState = messages.length === 0\n  const caseContext = messages.find(message => message.caseContext)?.caseContext")
+    # Remove the old banner on upgrades; keep case metadata for read-only access.
+    banner = '      {caseContext && <div className="p-3 bg-amber-50 border-b text-sm text-amber-900">{caseContext} 请新建对话操作当前业务。</div>}\n'
+    chat_path.write_text(chat_path.read_text().replace(banner, ""))
+    replace_once(root / "src/components/ChatPanel.tsx", "disabled={loading}", "disabled={loading || !!caseContext}")
+    replace_once(root / "src/components/ChatPanel.tsx", "disabled={loading || !input.trim()}", "disabled={loading || !!caseContext || !input.trim()}")
+    # Upgrade earlier adapter runs that inserted the status line twice.
+    lines = chat_path.read_text().splitlines(keepends=True)
+    seen_status = False
+    cleaned = []
+    for line in lines:
+        if "<SupplierRequestStatus loading={loading}" in line:
+            if seen_status:
+                continue
+            seen_status = True
+        cleaned.append(line)
+    chat_path.write_text("".join(cleaned))
+    replace_once(chat_path, "__SUPPLIER_DEMO__ && <SupplierRequestStatus", "__SUPPLIER_DEMO__ && !caseContext && <SupplierRequestStatus")
+    from prepare_accounts import apply as apply_accounts
+    apply_accounts(root, replace_once)
     print("供应商界面适配完成；设置 ONTOPILOT_SUPPLIER_DEMO=1 构建才会启用。")
 
 

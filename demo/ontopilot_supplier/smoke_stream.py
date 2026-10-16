@@ -19,6 +19,7 @@ def main():
     ]
     results, sid = {}, None
     with httpx.Client(timeout=180, trust_env=False) as client:
+        client.post('http://127.0.0.1:8000/api/login', json={'username': 'viewer', 'password': 'demo123'}).raise_for_status()
         for name, question, params, follow in cases:
             start, events = time.monotonic(), []
             body = {'user_id': 'viewer-demo', 'role': 'viewer', 'warehouse_id': '', 'message': question}

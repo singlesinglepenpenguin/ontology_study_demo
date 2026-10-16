@@ -16,7 +16,7 @@ class StreamingTest(unittest.IsolatedAsyncioTestCase):
             events, gate = [], asyncio.Event()
             class Model:
                 rounds = 0
-                def bind_tools(self, tools): return self
+                def bind_tools(self, tools, **kwargs): return self
                 async def astream(self, messages):
                     self.rounds += 1
                     if self.rounds == 1:
@@ -40,7 +40,7 @@ class StreamingTest(unittest.IsolatedAsyncioTestCase):
             chart = next(data for kind, data in events if kind == 'visualization')
             self.assertEqual(chart['totals']['count'], 8)
             self.assertEqual(chart['totals']['amount'], 277000)
-            actual = next(data for kind, data in events if kind == 'tool_result')
+            actual = next(data for kind, data in events if kind == 'tool_result' and data['tool'] == 'call_function')
             self.assertEqual(actual['arguments']['function_name'], 'aggregateOrders')
             self.assertEqual(actual['result'], chart)
             gate.set()
@@ -59,11 +59,14 @@ class StreamingHTTPTest(unittest.TestCase):
             store = SessionStore(str(Path(tmp) / 'sessions.db'))
             app = FastAPI()
             app.state.active_llm = object()
+            from auth import register_auth
+            register_auth(app, store)
             register_stream(app, store)
             async def fail(*args): raise RuntimeError('simulated provider failure')
             with patch('streaming.build_runtime', return_value=object()), patch('streaming.stream_turn', side_effect=fail), self.assertLogs('streaming', level='ERROR'):
                 client = TestClient(app)
-                response = client.post('/api/chat/live', json={'role': 'viewer', 'user_id': 'v', 'message': '测试'})
+                client.post('/api/login', json={'username': 'viewer', 'password': 'demo123'})
+                response = client.post('/api/chat/live', json={'role': 'viewer', 'user_id': 'viewer-demo', 'message': '测试'})
             import json
             events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ')]
             self.assertEqual([e['type'] for e in events], ['session', 'error'])

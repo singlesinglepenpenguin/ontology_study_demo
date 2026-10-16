@@ -5,7 +5,7 @@ export interface AggregateView {
   rows: { key: string; label: string; count: number; quantity: number; amount: number }[]
   totals: { count: number; quantity: number; amount: number }; totalGroups: number; shownGroups: number
 }
-export interface ToolResult { tool: string; arguments: Record<string, unknown>; result: unknown }
+export interface ToolResult { origin?: string; tool: string; arguments: Record<string, unknown>; result: unknown }
 export function SupplierActivity({ steps, streaming, charts, toolResults }: { steps?: string[]; streaming?: boolean; charts?: AggregateView[]; toolResults?: ToolResult[] }) {
   return <>
     {!!steps?.length && <details open={streaming || undefined} className="mb-3 border rounded-lg bg-white p-3 text-xs" data-testid="execution-progress">
@@ -14,10 +14,10 @@ export function SupplierActivity({ steps, streaming, charts, toolResults }: { st
       <ol className="mt-2 space-y-1 text-gray-600">{steps.map((step, i) => <li key={i}>{i + 1}. {step}</li>)}</ol>
     </details>}
     {!!toolResults?.length && <details className="mb-3 border rounded-lg bg-white p-3 text-xs" data-testid="tool-results">
-      <summary className="cursor-pointer text-blue-700">实际工具返回（{toolResults.length} 次查询/计算）</summary>
+      <summary className="cursor-pointer text-blue-700">实际工具返回（{toolResults.length} 次工具调用）</summary>
       <p className="text-gray-400 mt-2">这是工具实际返回给 Agent 的结果。可与左侧「数据明细」使用相同条件核对。</p>
       {toolResults.map((entry, index) => <details key={index} className="mt-2 border-t pt-2">
-        <summary className="cursor-pointer font-mono">{index + 1}. {String(entry.arguments.function_name || entry.arguments.object_type || entry.tool)}</summary>
+        <summary className="cursor-pointer font-mono">{index + 1}. {entry.origin ? entry.origin + ' · ' : ''}{String(entry.arguments.function_name || entry.arguments.object_type || entry.arguments.action_name || entry.tool)}</summary>
         <p className="mt-2 text-gray-500">调用参数</p><pre className="overflow-auto max-h-48 whitespace-pre-wrap mt-1">{JSON.stringify(entry.arguments, null, 2)}</pre>
         <p className="mt-2 text-gray-500">工具返回</p><pre className="overflow-auto max-h-80 whitespace-pre-wrap mt-1">{JSON.stringify(entry.result, null, 2)}</pre>
       </details>)}

@@ -199,17 +199,17 @@ class SupplierService:
             raise KeyError("；".join(assessment["reasons"]))
         return assessment
 
-    def execute(self, role, user_id, name, params, confirmed):
+    def execute(self, role, user_id, name, params, confirmed, expected_snapshot=None):
         if not confirmed:
             raise PermissionError("修改前需要用户确认")
         # Original ObjectStore commits every write separately. Use one SQLite
         # transaction so a multi-order change cannot be partially committed.
         if self.store._in_memory is not None:
-            return self._execute(role, user_id, name, params)
+            return self._execute(role, user_id, name, params, expected_snapshot)
         with closing(sqlite3.connect(self.store._db_path)) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             fork = self.store.fork()
-            result = SupplierService(fork)._execute(role, user_id, name, params)
+            result = SupplierService(fork)._execute(role, user_id, name, params, expected_snapshot)
             for kind, rows in fork._in_memory.items():
                 for key, obj in rows.items():
                     if self.store.get(kind, key) != obj:
@@ -217,8 +217,10 @@ class SupplierService:
                                      (kind, key, json.dumps(obj, ensure_ascii=False)))
             return result
 
-    def _execute(self, role, user_id, name, params):
+    def _execute(self, role, user_id, name, params, expected_snapshot=None):
         assessment = self.validate_action(role, name, params)
+        if expected_snapshot is not None and assessment["snapshot"] != expected_snapshot:
+            raise KeyError("预览后业务数据已变化，请重新预览并确认")
         now = datetime.now(timezone.utc).isoformat()
         if name == "submitSupplierChange":
             request = {

@@ -21,6 +21,7 @@ palantir/
 └── demo/ontopilot_supplier/          当前采购 Demo
     ├── run.py                       启动、模型配置、CLI
     ├── server.py                    当前 FastAPI 应用
+    ├── auth.py                      服务端登录凭据、会话归属与账号隔离
     ├── streaming.py                 浏览器流式 Agent 与 POST SSE
     ├── inspection.py                本体状态与 SQLite 业务明细只读 API
     ├── runtime.py                   组装原 Runtime，接入采购函数与操作
@@ -38,7 +39,7 @@ palantir/
 | 运行方式 | 启动入口 | Agent 路径 |
 |---|---|---|
 | 当前采购网页 | `demo/ontopilot_supplier/run.py serve` → `server.create_app()` | `/api/chat/live` → `streaming.stream_turn()` |
-| 当前采购兼容 API | 同上 | `/api/chat` → 原 `ontopilot.agent.run_turn()` |
+| 当前采购兼容 API | 同上 | `/api/chat` → 同一流式处理器，收集完成结果后返回 JSON |
 | 当前采购单次命令行问答 | `run.py chat "问题"` | 原 `ontopilot.agent.run_turn()` |
 | 原项目网页/API | 在原仓库启动 `uvicorn api.main:app` | `/api/chat` → 原 LangGraph Agent |
 | 原项目 CLI | 安装包后的 `ontopilot chat` / `ontopilot run_case` | `ontopilot/cli.py` |
@@ -51,6 +52,7 @@ palantir/
 flowchart TD
     Run["demo/run.py<br/>main / get_llm"] --> Server["demo/server.py<br/>create_app"]
     Run --> Build["demo/runtime.py<br/>build_runtime"]
+    Server --> Auth["demo/auth.py<br/>登录身份与会话归属"]
     Server --> Build
     Server --> Stream["demo/streaming.py<br/>register_stream / stream_turn"]
     Server --> Routes["原 api/routes<br/>chat / sessions / audit / 只读 settings"]
@@ -79,7 +81,7 @@ flowchart TD
 | [runtime.py](demo/ontopilot_supplier/runtime.py) | build_runtime、SupplierContext、SupplierActions | 原组件如何组装；`functions._fns.update` 如何注册业务函数；操作与上下文怎样扩展 |
 | [domain.py](demo/ontopilot_supplier/domain.py) | SupplierService | 金额、影响、方案约束、聚合、审批和事务的真正实现 |
 
-`build_runtime()` 不负责调用 LLM；`SupplierService` 也不依赖 LLM。网页对话的模型循环在 streaming.py，原兼容接口和 CLI 的模型循环在原 agent.py。
+`build_runtime()` 不负责调用 LLM；`SupplierService` 也不依赖 LLM。网页对话的模型循环在 streaming.py，当前 JSON 兼容接口复用流式循环，CLI 的模型循环仍在原 agent.py。
 
 ## 3. 原项目核心库的依赖图
 
@@ -340,3 +342,6 @@ flowchart LR
 | 增加对外 API 或开放配置功能 | server.py；不要只改前端菜单 |
 
 文档图谱依据源码静态阅读整理。当前功能验证的范围与原项目未运行的测试，见 [验证记录](demo/ontopilot_supplier/验证记录.md)，不能用模块依赖图代替功能验证。
+
+
+本轮增加的入口：`auth.py` 提供带归属校验的 `PATCH /api/sessions/{sid}` 标题更新，并阻止只读快照续聊；`model/SessionTitleEditor.tsx` 是历史标题编辑窗口；`model/SupplierRequestStatus.tsx` 从当前数据库读取申请状态。`streaming.py` 在每轮模型调用前查询共享申请，将真实结果与读取时间交给模型并保存到工具记录。上述组件均由适配脚本复制到上游前端，可重新生成。功能覆盖及实测对话见 [对话案例清单](demo/ontopilot_supplier/对话案例清单.md)。

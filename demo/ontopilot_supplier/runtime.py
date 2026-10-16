@@ -30,10 +30,14 @@ class SupplierActions(ActionExecutor):
                 "target": params.get("requestId", "new ChangeRequest"),
                 "changes": [{"action": action_name, "orderIds": assessment["orderIds"]}],
                 "estimated_impact": {"extraCost": assessment["extraCost"]},
+                "snapshot": assessment["snapshot"],
                 "requires_confirmation": True}
 
     def execute(self, role, user_id, action_name, params, confirmed):
-        return self.service.execute(role, user_id, action_name, params, confirmed)
+        params = dict(params)
+        snapshot = params.pop("_confirmedSnapshot", None)
+        return self.service.execute(role, user_id, action_name, params, confirmed,
+                                    expected_snapshot=snapshot)
 
 
 class SupplierContext(ContextBuilder):

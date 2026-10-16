@@ -1,4 +1,4 @@
-"""Reuse upstream chat, sessions, tracing and React UI for the supplier model."""
+"""Supplier demo app with authenticated sessions, tracing and the adapted UI."""
 from __future__ import annotations
 
 import os
@@ -16,7 +16,6 @@ def create_app():
     # Upstream SessionStore uses a relative SQLite path at import time.
     os.chdir(HERE)
     from api.routes.chat import router as chat_router
-    from api.routes.sessions import router as sessions_router
     from api.routes.audit import router as audit_router
     from api.routes.settings import router as settings_router
     from api.routes import chat, sessions
@@ -59,12 +58,18 @@ def create_app():
                 return JSONResponse({"detail": "此示例使用本地配置的 DeepSeek 模型"}, status_code=400)
         return await call_next(request)
 
+    from auth import register_auth, USERS
+    register_auth(app, sessions.session_store)
     from inspection import register_inspection
     register_inspection(app)
     from streaming import register_stream
     register_stream(app, sessions.session_store)
-    app.include_router(chat_router, prefix="/api")
-    app.include_router(sessions_router, prefix="/api")
+    for route in chat_router.routes:
+        if getattr(route, "path", None) != "/chat":
+            from fastapi import APIRouter
+            legacy = APIRouter()
+            legacy.routes.append(route)
+            app.include_router(legacy, prefix="/api")
     app.include_router(audit_router, prefix="/api")
     # Read-only metadata endpoints power the original ontology graph UI.
     for route in settings_router.routes:
@@ -74,22 +79,9 @@ def create_app():
             readonly.routes.append(route)
             app.include_router(readonly, prefix="/api")
 
-    demo_users = {
-        "viewer": {"id": "viewer-demo", "username": "viewer", "role": "viewer", "display_name": "查询员"},
-        "buyer": {"id": "buyer-demo", "username": "buyer", "role": "buyer", "display_name": "采购员"},
-        "approver": {"id": "approver-demo", "username": "approver", "role": "approver", "display_name": "审批员"},
-    }
-
-    @app.post("/api/login")
-    async def login(body: dict):
-        user = demo_users.get(body.get("username"))
-        if user is None or body.get("password") != "demo123":
-            raise HTTPException(401, "教学账号为 viewer、buyer 或 approver，密码 demo123")
-        return {"status": "ok", "user": user}
-
     @app.get("/api/users")
     async def users():
-        return {"users": list(demo_users.values())}
+        return {"users": list(USERS.values())}
 
     @app.get("/api/roles")
     async def roles():
@@ -103,11 +95,7 @@ def create_app():
 
     @app.post("/api/ontology/import")
     async def reset(request: Request):
-        attach(request.app, reset=True)
-        return {"status": "ok", "message": "教学数据已重置",
-                "object_type_count": len(request.app.state.schema.object_type_names),
-                "action_count": len(request.app.state.schema.action_names),
-                "function_count": len(request.app.state.schema.function_names)}
+        raise HTTPException(403, "教学数据重置请通过本机 run.py reset 命令执行。")
 
     @app.get("/api/health")
     async def health():

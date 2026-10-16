@@ -1,8 +1,12 @@
-export async function supplierStream(body: unknown, onEvent: (event: any) => void) {
+export async function supplierStream(body: unknown, onEvent: (event: any) => void, signal?: AbortSignal) {
   const response = await fetch('/api/chat/live', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    signal, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   })
-  if (!response.ok || !response.body) throw new Error(`请求失败 (${response.status})`)
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.detail || `请求失败 (${response.status})`)
+  }
+  if (!response.body) throw new Error('服务器未返回对话流')
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = '', completed = false
