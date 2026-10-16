@@ -19,3 +19,5 @@
 `05-ontopilot-home.png` 为合并采购 Demo 的本地首页截图，统计来自实际 Runtime；`04-ontopilot-supplier.png` 更新为统一编号与新版数据下的真实 DeepSeek 对话。前两张原创 SVG 也已统一为相同物料编号与本地执行边界。
 
 `06-ontopilot-aggregate.png` 为本地 Chrome 验证的流式对话聚合截图，展示真实工具计算的延期影响销售额、供应商分组条形图和明细表；不是 Palantir 官方产品截图。
+
+`07-ontopilot-cell-case.png` 为本地真实 DeepSeek 问答截图，限定 SUP-001 + MAT-001，展示 O1/O2 的 70,000 元延期影响和 20,000 元增量成本。它对应正文电芯案例；06 截图则是全体受影响订单的 277,000 元汇总，两者统计范围不同。

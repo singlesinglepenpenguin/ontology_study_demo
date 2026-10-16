@@ -40,6 +40,9 @@ class StreamingTest(unittest.IsolatedAsyncioTestCase):
             chart = next(data for kind, data in events if kind == 'visualization')
             self.assertEqual(chart['totals']['count'], 8)
             self.assertEqual(chart['totals']['amount'], 277000)
+            actual = next(data for kind, data in events if kind == 'tool_result')
+            self.assertEqual(actual['arguments']['function_name'], 'aggregateOrders')
+            self.assertEqual(actual['result'], chart)
             gate.set()
             result = await task
             self.assertEqual(result['response'], '受影响8单，277000元')

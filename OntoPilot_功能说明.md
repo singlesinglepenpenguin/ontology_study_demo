@@ -26,16 +26,16 @@ OntoPilot 用 YAML 定义业务对象、属性、关系和允许调用的能力�
 | 权限控制 | 按角色控制可查询类型、可调用函数、可执行操作；部分物流数据范围限制 | viewer、buyer、approver，分别承担查询、采购和审批 |
 | 操作预览与确认 | preview_action 返回变更预览；执行时检查角色及确认要求 | 已接入；增加提交、异人审批、执行前重验及事务回滚 |
 | 单步仿真 | 复制内存数据，在分支上比较物流运单方案的 KPI | 未接入采购浏览器场景；采购采用确定性方案评估函数 |
-| 多轮会话 | SQLite 保存消息、标题和待确认操作；列表、打开、删除历史 | 已接入；增加步骤和聚合图表的历史保存 |
+| 多轮会话 | SQLite 保存消息、标题和待确认操作；列表、打开、删除历史 | 已接入；增加步骤、聚合图表及实际工具返回的历史保存 |
 | 执行 Trace | 记录上下文、查询、函数、操作、仿真等事件及输入输出摘要 | 实时进入页面；展示实际执行过程摘要 |
 | 持久化审计 | 函数调用、操作执行等通过 AuditLogger 写 SQLite；提供查询接口 | 已复用；不是所有界面行为都构成审计事件 |
 | 模型配置 | 模型列表、配置保存、连通性测试、切换；支持 Anthropic/OpenAI 及其兼容接口 | 固定本地配置的 DeepSeek；网页修改和测试模型接口未开放 |
-| 本体管理 | 列表、状态、详情、YAML 上传、激活、删除和种子数据重载 | 仅固定采购本体、只读元数据及教学数据重置，不开放任意上传或切换 |
+| 本体管理 | 列表、状态、详情、YAML 上传、激活、删除和种子数据重载 | 固定采购本体自动加载，配置页显示后端状态，无需点击激活；提供只读元数据及教学数据重置，不开放任意上传或切换 |
 | 用户与角色管理 | 教学登录、用户增删改查、角色权限读取和更新 | 固定三个教学账号，提供只读用户/角色信息 |
-| 网页界面 | React 聊天、历史侧栏、模型与本体选择、管理页、Trace、本体关系图 | 已适配采购首页、10 个示例问题、流式聊天、聚合条形图和表格 |
+| 网页界面 | React 聊天、历史侧栏、模型与本体选择、管理页、Trace、本体关系图 | 已适配采购首页、10 个示例问题、流式聊天、聚合条形图和表格、只读 SQLite 数据明细 |
 | REST API 与 SSE | FastAPI 路由；原 SSE 推送 Trace，POST chat 最后返回完整回答 | 新增单条 POST SSE，同时返回状态、Trace、文字增量、图表及完成事件 |
 | 命令行 | `ontopilot chat` 与两个物流 `run_case` 示例 | `run.py` 提供 serve、chat、check、reset |
-| 测试与评估 | 单元/集成/对话测试；BaselineEvaluator 检查数据、权限、确认、审计及范围 | 19 项程序测试，另有真实模型和浏览器验证 |
+| 测试与评估 | 单元/集成/对话测试；BaselineEvaluator 检查数据、权限、确认、审计及范围 | 23 项程序测试，另有真实模型和浏览器验证 |
 
 源码入口：[核心 Runtime](repos/ontopilot/ontopilot/runtime.py)、[原 API](repos/ontopilot/api/main.py)、[当前 Demo API](demo/ontopilot_supplier/server.py)。
 
@@ -209,7 +209,7 @@ repos/ontopilot/.venv/bin/python demo/ontopilot_supplier/run.py serve
 
 访问 http://127.0.0.1:8000，刷新页面后选择教学账号。新机器安装和前端构建请看 [Demo README](demo/ontopilot_supplier/README.md)。
 
-本地验证记录：19 项程序测试、前次 7 组真实模型查询/评估、新增 6 组流式问答，以及 Chrome 页面验证。它们没有覆盖原项目所有业务域。详见 [验证记录](demo/ontopilot_supplier/验证记录.md) 和 [流式问答摘录](demo/ontopilot_supplier/流式问答验证.md)。
+本地验证记录：23 项程序测试、前次 7 组真实模型查询/评估、新增 6 组流式问答，以及 Chrome 页面验证。它们没有覆盖原项目所有业务域。详见 [验证记录](demo/ontopilot_supplier/验证记录.md) 和 [流式问答摘录](demo/ontopilot_supplier/流式问答验证.md)。
 
 阅读原项目说明时注意三处差异：
 

@@ -64,6 +64,8 @@ async def stream_turn(runtime, llm, session, message, history, confirmed, emit):
                 result = {"error": str(exc)}
             content = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
             messages.append(ToolMessage(content=content, tool_call_id=call["id"]))
+            if name in ("object_query", "call_function"):
+                emit("tool_result", {"tool": name, "arguments": args, "result": result})
             if name == "call_function" and args.get("function_name") == "aggregateOrders":
                 data = json.loads(content) if isinstance(result, str) else result
                 if isinstance(data, dict) and "rows" in data:
@@ -99,10 +101,12 @@ def register_stream(app, store):
         busy.add(sid)
         history = store.get_history(sid)
         queue = asyncio.Queue()
-        steps, charts = [], []
+        steps, charts, tool_results = [], [], []
         def emit(kind, data):
             if kind == "progress":
                 steps.append(data["text"])
+            if kind == "tool_result":
+                tool_results.append(data)
             if kind == "visualization":
                 charts.append(data)
             queue.put_nowait({"type": kind, **data})
@@ -114,7 +118,7 @@ def register_stream(app, store):
                                            body.message, history, body.confirmed, emit)
                 store.add_message(sid, "human", body.message)
                 store.add_message(sid, "ai", result["response"])
-                session["messages"][-1].update(steps=steps, charts=charts)
+                session["messages"][-1].update(steps=steps, charts=charts, toolResults=tool_results)
                 store.update(sid, pending_action=result["pending_action"])
                 emit("complete", {"session_id": sid, **result})
             except asyncio.CancelledError:

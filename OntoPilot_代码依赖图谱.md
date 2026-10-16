@@ -22,6 +22,7 @@ palantir/
     ├── run.py                       启动、模型配置、CLI
     ├── server.py                    当前 FastAPI 应用
     ├── streaming.py                 浏览器流式 Agent 与 POST SSE
+    ├── inspection.py                本体状态与 SQLite 业务明细只读 API
     ├── runtime.py                   组装原 Runtime，接入采购函数与操作
     ├── domain.py                    采购计算、审批和事务
     ├── build_dataset.py             合并模型、生成数据、校验外键
@@ -202,6 +203,10 @@ flowchart TD
     Chat --> Activity["SupplierActivity.tsx<br/>步骤、条形图、表格"]
     App --> Trace["TracePanel.tsx<br/>工具轨迹"]
     App --> Graph["OntologyGraphPanel.tsx<br/>类型关系图与高亮"]
+    App --> Data["SupplierDataPanel.tsx<br/>SQLite 数据明细"]
+    Data -.-> Read["/api/demo/data"]
+    App --> ModelInfo["SupplierOntologyPanel.tsx<br/>当前本体定义与状态"]
+    ModelInfo -.-> Status["/api/demo/model"]
     App --> Admin["原配置与用户管理组件"]
     Graph -.-> Meta["/api/ontology/detail/{filename}"]
     Home -.-> Overview["/api/demo/overview"]
@@ -216,6 +221,7 @@ flowchart TD
 | trace | 原 Runtime 事件 | 更新 Trace 面板与本体图高亮 |
 | answer_delta | 模型公开回答文字增量 | 追加助手消息 |
 | visualization | 聚合函数结果 | 显示条形图和明细表 |
+| tool_result | 查询/函数真正返回给 Agent 的参数与完整结果 | 展开核对，并随历史保存 |
 | complete | 最终回答、会话和确认状态 | 标记完成、更新历史和确认按钮 |
 | error | 面向用户的失败提示 | 标明失败，避免把中断当作完成 |
 

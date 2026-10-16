@@ -1,5 +1,5 @@
       if (__SUPPLIER_DEMO__) {
-        const assistant: Message = { role: 'assistant', content: '', timestamp: new Date().toISOString(), steps: [], charts: [], streaming: true }
+        const assistant: Message = { role: 'assistant', content: '', timestamp: new Date().toISOString(), steps: [], charts: [], toolResults: [], streaming: true }
         setMessages(prev => [...prev, assistant])
         const update = (fn: (msg: Message) => Message) => setMessages(prev => prev.map(msg => msg.role === 'assistant' && msg.timestamp === assistant.timestamp ? fn(msg) : msg))
         try {
@@ -9,6 +9,7 @@
             if (event.type === 'session') setSessionId(event.session_id)
             if (event.type === 'progress') update(msg => ({ ...msg, steps: [...(msg.steps || []), event.text] }))
             if (event.type === 'trace') { const { type, ...trace } = event; handleTraceEvent(trace as TraceEvent) }
+            if (event.type === 'tool_result') update(msg => ({ ...msg, toolResults: [...(msg.toolResults || []), event] }))
             if (event.type === 'answer_delta') update(msg => ({ ...msg, content: msg.content + event.text }))
             if (event.type === 'visualization') update(msg => ({ ...msg, charts: [...(msg.charts || []), event] }))
             if (event.type === 'complete') {
