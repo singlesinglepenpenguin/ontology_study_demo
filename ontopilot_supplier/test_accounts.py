@@ -183,7 +183,7 @@ class AccountTest(unittest.TestCase):
         self.assertEqual([option['id'] for option in options], ['ontology_schema.yaml'])
         self.assertEqual(len(options[0]['functions']), 8)
         self.assertEqual(len(options[0]['actions']), 3)
-        settings = self.viewer.get('/api/settings').json()
+        settings = self.app.state.settings
         result = self.turn(self.viewer, ontology_id=options[0]['id'], model_id=settings['active_model_id'])
         self.assertIn('response', result)
 
